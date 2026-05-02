@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TimePeriod {
+  THIRTY_DAYS
+  THREE_MONTHS
+  SIX_MONTHS
+  MORE_THAN_SIX_MONTHS
+  ALL
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  userQuestions UserQuestion[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Company {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  questions Question[]
+  @@index([slug])
+}
+
+model Question {
+  id             String     @id @default(cuid())
+  title          String
+  leetcodeUrl    String
+  difficulty     Difficulty
+  topics         String[]
+  frequency      Float
+  acceptanceRate Float
+  companyId      String
+  timePeriod     TimePeriod
+  createdAt      DateTime   @default(now())
+  company        Company    @relation(fields: [companyId], references: [id])
+  userQuestions  UserQuestion[]
+  @@unique([leetcodeUrl, companyId, timePeriod])
+  @@index([companyId])
+  @@index([difficulty])
+}
+
+model UserQuestion {
+  id         String    @id @default(cuid())
+  userId     String
+  questionId String
+  solved     Boolean   @default(false)
+  solvedAt   DateTime?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+}
