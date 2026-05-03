@@ -4,6 +4,7 @@ import { CompanyCard } from "@/components/company-card";
 import { DifficultyBadge } from "@/components/difficulty-badge";
 import { SearchBar } from "@/components/search-bar";
 import { Card } from "@/components/ui/card";
+import BlurText from "@/components/BlurText";
 
 export default async function HomePage() {
   const [companies, totalQuestions, totalCompanies, recentQuestions] =
@@ -25,7 +26,13 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <section className="mb-12 flex flex-col items-center gap-4 text-center">
-        <h1 className="text-4xl font-bold">LeetCode Company Tracker</h1>
+        <BlurText
+          text="LeetCode Company Tracker"
+          delay={150}
+          animateBy="words"
+          direction="top"
+          className="text-4xl font-bold"
+        />
         <p className="text-lg text-muted-foreground">
           Track {totalQuestions.toLocaleString()} questions across {totalCompanies} companies
         </p>
