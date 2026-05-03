@@ -1,23 +1,36 @@
-import Link from "next/link";
-import { prisma } from "@/lib/db";
-import { redis } from "@/lib/redis";
-import { CompanyCard } from "@/components/company-card";
-import { DifficultyBadge } from "@/components/difficulty-badge";
-import { SearchBar } from "@/components/search-bar";
-import { Card } from "@/components/ui/card";
-import { DailyProblemCard } from "@/components/daily-problem-card";
+import Link from "next/link"
+import { prisma } from "@/lib/db"
+import { redis } from "@/lib/redis"
+import { CompanyCard } from "@/components/company-card"
+import { DifficultyBadge } from "@/components/difficulty-badge"
+import { SearchBar } from "@/components/search-bar"
+import { Card } from "@/components/ui/card"
+import { DailyProblemCard } from "@/components/daily-problem-card"
 
-async function fetchDailyProblem() {
-  const CACHE_KEY = "leetcode:daily";
+interface DailyProblem {
+  questionLink: string
+  date: string
+  questionTitle: string
+  titleSlug: string
+  difficulty: string
+  isPaidOnly: boolean
+  topicTags: Array<{ name: string; slug: string }>
+  likes: number
+  dislikes: number
+  hints: string[]
+}
+
+async function fetchDailyProblem(): Promise<DailyProblem | null> {
+  const CACHE_KEY = "leetcode:daily"
   try {
-    const cached = await redis.get(CACHE_KEY);
-    if (cached) return cached;
+    const cached = await redis.get<string>(CACHE_KEY)
+    if (cached) return JSON.parse(cached) as DailyProblem
   } catch {}
 
   try {
-    const res = await fetch("https://alfa-leetcode-api.onrender.com/daily");
-    const data = await res.json();
-    if (data.errors) return null;
+    const res = await fetch("https://alfa-leetcode-api.onrender.com/daily")
+    const data = await res.json()
+    if (data.errors) return null
 
     const result = {
       questionLink: data.questionLink,
@@ -30,18 +43,20 @@ async function fetchDailyProblem() {
       likes: data.likes,
       dislikes: data.dislikes,
       hints: data.hints,
-    };
+    }
 
     // Cache until midnight UTC
-    const now = new Date();
-    const midnight = new Date(now);
-    midnight.setUTCHours(24, 0, 0, 0);
-    const ttl = Math.floor((midnight.getTime() - now.getTime()) / 1000);
-    try { await redis.setex(CACHE_KEY, ttl, result); } catch {}
+    const now = new Date()
+    const midnight = new Date(now)
+    midnight.setUTCHours(24, 0, 0, 0)
+    const ttl = Math.floor((midnight.getTime() - now.getTime()) / 1000)
+    try {
+      await redis.setex(CACHE_KEY, ttl, JSON.stringify(result))
+    } catch {}
 
-    return result;
+    return result
   } catch {
-    return null;
+    return null
   }
 }
 
@@ -61,14 +76,15 @@ export default async function HomePage() {
         include: { company: { select: { name: true, slug: true } } },
       }),
       fetchDailyProblem(),
-    ]);
+    ])
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <section className="mb-12 flex flex-col items-center gap-4 text-center">
         <h1 className="text-4xl font-bold">LeetCode Company Tracker</h1>
         <p className="text-lg text-muted-foreground">
-          Track {totalQuestions.toLocaleString()} questions across {totalCompanies} companies
+          Track {totalQuestions.toLocaleString()} questions across{" "}
+          {totalCompanies} companies
         </p>
         <SearchBar className="w-full max-w-lg" />
       </section>
@@ -79,7 +95,9 @@ export default async function HomePage() {
           <p className="text-sm text-muted-foreground">Companies</p>
         </Card>
         <Card className="p-4 text-center">
-          <p className="text-3xl font-bold">{totalQuestions.toLocaleString()}</p>
+          <p className="text-3xl font-bold">
+            {totalQuestions.toLocaleString()}
+          </p>
           <p className="text-sm text-muted-foreground">Questions</p>
         </Card>
         <Card className="p-4 text-center">
@@ -93,11 +111,21 @@ export default async function HomePage() {
       <section className="mb-12">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Top Companies</h2>
-          <Link href="/companies" className="text-sm text-primary hover:underline">View all →</Link>
+          <Link
+            href="/companies"
+            className="text-sm text-primary hover:underline"
+          >
+            View all →
+          </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {companies.map((c) => (
-            <CompanyCard key={c.id} name={c.name} slug={c.slug} questionCount={c._count.questions} />
+            <CompanyCard
+              key={c.id}
+              name={c.name}
+              slug={c.slug}
+              questionCount={c._count.questions}
+            />
           ))}
         </div>
       </section>
@@ -106,18 +134,20 @@ export default async function HomePage() {
         <h2 className="mb-4 text-2xl font-bold">Recently Added</h2>
         <div className="flex flex-col gap-2">
           {recentQuestions.map((q) => (
-            <Link 
+            <Link
               key={q.id}
               href={`/questions/${q.id}`}
-              className="flex items-center gap-4 rounded-md border p-3 hover:bg-accent transition-colors"
+              className="flex items-center gap-4 rounded-md border p-3 transition-colors hover:bg-accent"
             >
               <span className="flex-1 font-medium">{q.title}</span>
               <DifficultyBadge difficulty={q.difficulty} />
-              <span className="text-sm text-muted-foreground">{q.company.name}</span>
+              <span className="text-sm text-muted-foreground">
+                {q.company.name}
+              </span>
             </Link>
           ))}
         </div>
       </section>
     </div>
-  );
+  )
 }
