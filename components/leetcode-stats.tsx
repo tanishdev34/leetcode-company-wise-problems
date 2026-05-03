@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { RefreshCw, CheckCircle2 } from "lucide-react";
+import { syncLeetcodeSubmissions } from "@/actions/sync";
 import { SolvedProgress } from "./solved-progress";
 import { ContestStats } from "./contest-stats";
 import { SkillBars } from "./skill-bars";
@@ -62,12 +65,31 @@ interface SubmissionsData {
   }>;
 }
 
+type SyncStatus =
+  | { type: "idle" }
+  | { type: "loading" }
+  | { type: "success"; synced: number; matched: number }
+  | { type: "error"; message: string };
+
 export function LeetcodeStats({ username }: LeetcodeStatsProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState<StatsData | null>(null);
   const [calendar, setCalendar] = useState<CalendarData | null>(null);
   const [submissions, setSubmissions] = useState<SubmissionsData | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({ type: "idle" });
+
+  async function handleSync() {
+    setSyncStatus({ type: "loading" });
+    const result = await syncLeetcodeSubmissions(username);
+    if (result.success) {
+      setSyncStatus({ type: "success", synced: result.synced, matched: result.matched });
+      router.refresh();
+    } else {
+      setSyncStatus({ type: "error", message: result.error });
+    }
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -136,13 +158,38 @@ export function LeetcodeStats({ username }: LeetcodeStatsProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-        <span className="bg-amber-500/20 text-amber-500 px-3 py-1 rounded-full text-sm">
-          🔥 {calendar.streak} day streak
-        </span>
-        <span className="bg-muted px-3 py-1 rounded-full text-sm">
-          📅 {calendar.totalActiveDays} active days
-        </span>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <span className="bg-amber-500/20 text-amber-500 px-3 py-1 rounded-full text-sm">
+            🔥 {calendar.streak} day streak
+          </span>
+          <span className="bg-muted px-3 py-1 rounded-full text-sm">
+            📅 {calendar.totalActiveDays} active days
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {syncStatus.type === "success" && (
+            <span className="flex items-center gap-1 text-sm text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              {syncStatus.synced} question{syncStatus.synced !== 1 ? "s" : ""} marked solved
+              <span className="text-muted-foreground">({syncStatus.matched} LeetCode problems matched)</span>
+            </span>
+          )}
+          {syncStatus.type === "error" && (
+            <span className="text-sm text-destructive">{syncStatus.message}</span>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSync}
+            disabled={syncStatus.type === "loading"}
+            className="gap-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncStatus.type === "loading" ? "animate-spin" : ""}`} />
+            {syncStatus.type === "loading" ? "Syncing…" : "Sync Solved"}
+          </Button>
+        </div>
       </div>
       
       <div className="grid gap-4 sm:grid-cols-2">
