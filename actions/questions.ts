@@ -131,6 +131,7 @@ export async function getQuestionDetail(
     solvedAt: Date | null;
     notes: string;
     code: string;
+    language: string;
   }>
 > {
   try {
@@ -162,17 +163,19 @@ export async function getQuestionDetail(
     let solvedAt: Date | null = null;
     let notes = "";
     let code = "";
+    let language = "cpp";
 
     if (userId) {
       const uq = await prisma.userQuestion.findUnique({
         where: { userId_questionId: { userId, questionId } },
-        select: { solved: true, solvedAt: true, notes: true, code: true },
+        select: { solved: true, solvedAt: true, notes: true, code: true, language: true },
       });
       if (uq) {
         solved = uq.solved;
         solvedAt = uq.solvedAt;
         notes = uq.notes || "";
         code = uq.code || "";
+        language = uq.language || "cpp";
       }
     }
 
@@ -191,6 +194,7 @@ export async function getQuestionDetail(
         solvedAt,
         notes,
         code,
+        language,
       },
     };
   } catch {
@@ -247,7 +251,7 @@ export async function saveNotes(
 }
 
 export async function saveCode(
-  questionId: string, code: string
+  questionId: string, code: string, language: string = "cpp"
 ): Promise<ActionResult<{ success: boolean }>> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -256,8 +260,8 @@ export async function saveCode(
 
     await prisma.userQuestion.upsert({
       where: { userId_questionId: { userId: session.user.id, questionId } },
-      update: { code },
-      create: { userId: session.user.id, questionId, code },
+      update: { code, language },
+      create: { userId: session.user.id, questionId, code, language },
     });
     return { success: true, data: { success: true } };
   } catch {
@@ -267,16 +271,20 @@ export async function saveCode(
 
 export async function getNotes(
   questionId: string
-): Promise<ActionResult<{ notes: string; code: string }>> {
+): Promise<ActionResult<{ notes: string; code: string; language: string }>> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) return { success: false, error: "Not authenticated" };
 
     const userQuestion = await prisma.userQuestion.findUnique({
       where: { userId_questionId: { userId: session.user.id, questionId } },
-      select: { notes: true, code: true },
+      select: { notes: true, code: true, language: true },
     });
-    return { success: true, data: { notes: userQuestion?.notes || "", code: userQuestion?.code || "" } };
+    return { success: true, data: { 
+      notes: userQuestion?.notes || "", 
+      code: userQuestion?.code || "",
+      language: userQuestion?.language || "cpp"
+    } };
   } catch {
     return { success: false, error: "Failed to fetch notes" };
   }

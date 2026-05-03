@@ -25,6 +25,7 @@ interface QuestionData {
   solvedAt: Date | null;
   notes: string;
   code: string;
+  language: string;
 }
 
 export default function QuestionDetailPage() {
@@ -157,6 +158,7 @@ export default function QuestionDetailPage() {
           questionId={data.id}
           initialNotes={data.notes}
           initialCode={data.code}
+          initialLanguage={data.language}
         />
       ) : (
         <div className="rounded-md border p-6 text-center text-muted-foreground">

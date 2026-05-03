@@ -23,17 +23,19 @@ enum TimePeriod {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  passwordHash  String?
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  userQuestions UserQuestion[]
-  emailVerified Boolean        @default(false)
+  id               String         @id @default(cuid())
+  email            String         @unique
+  name             String?
+  passwordHash     String?
+  image            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  userQuestions    UserQuestion[]
+  emailVerified    Boolean        @default(false)
+  role             String         @default("user")
+  leetcodeUsername String?
 
   @@map("user")
 }
@@ -110,6 +112,7 @@ model UserQuestion {
   solvedAt   DateTime?
   notes      String?
   code       String?
+  language   String    @default("cpp")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)

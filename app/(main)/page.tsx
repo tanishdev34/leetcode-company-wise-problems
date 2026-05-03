@@ -1,13 +1,52 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { redis } from "@/lib/redis";
 import { CompanyCard } from "@/components/company-card";
 import { DifficultyBadge } from "@/components/difficulty-badge";
 import { SearchBar } from "@/components/search-bar";
 import { Card } from "@/components/ui/card";
-import BlurText from "@/components/BlurText";
+import { DailyProblemCard } from "@/components/daily-problem-card";
+
+async function fetchDailyProblem() {
+  const CACHE_KEY = "leetcode:daily";
+  try {
+    const cached = await redis.get(CACHE_KEY);
+    if (cached) return cached;
+  } catch {}
+
+  try {
+    const res = await fetch("https://alfa-leetcode-api.onrender.com/daily");
+    const data = await res.json();
+    if (data.errors) return null;
+
+    const result = {
+      questionLink: data.questionLink,
+      date: data.date,
+      questionTitle: data.questionTitle,
+      titleSlug: data.titleSlug,
+      difficulty: data.difficulty,
+      isPaidOnly: data.isPaidOnly,
+      topicTags: data.topicTags,
+      likes: data.likes,
+      dislikes: data.dislikes,
+      hints: data.hints,
+    };
+
+    // Cache until midnight UTC
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setUTCHours(24, 0, 0, 0);
+    const ttl = Math.floor((midnight.getTime() - now.getTime()) / 1000);
+    try { await redis.setex(CACHE_KEY, ttl, result); } catch {}
+
+    return result;
+  } catch {
+    return null;
+  }
+}
 
 export default async function HomePage() {
-  const [companies, totalQuestions, totalCompanies, recentQuestions] =
+  const [companies, totalQuestions, totalCompanies, recentQuestions, daily] =
     await Promise.all([
       prisma.company.findMany({
         include: { _count: { select: { questions: true } } },
@@ -21,18 +60,13 @@ export default async function HomePage() {
         take: 10,
         include: { company: { select: { name: true, slug: true } } },
       }),
+      fetchDailyProblem(),
     ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
       <section className="mb-12 flex flex-col items-center gap-4 text-center">
-        <BlurText
-          text="LeetCode Company Tracker"
-          delay={150}
-          animateBy="words"
-          direction="top"
-          className="text-4xl font-bold"
-        />
+        <h1 className="text-4xl font-bold">LeetCode Company Tracker</h1>
         <p className="text-lg text-muted-foreground">
           Track {totalQuestions.toLocaleString()} questions across {totalCompanies} companies
         </p>
@@ -54,6 +88,8 @@ export default async function HomePage() {
         </Card>
       </section>
 
+      {daily && <DailyProblemCard problem={daily} />}
+
       <section className="mb-12">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Top Companies</h2>
@@ -70,12 +106,15 @@ export default async function HomePage() {
         <h2 className="mb-4 text-2xl font-bold">Recently Added</h2>
         <div className="flex flex-col gap-2">
           {recentQuestions.map((q) => (
-            <a key={q.id} href={q.leetcodeUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-4 rounded-md border p-3 hover:bg-accent">
+            <Link 
+              key={q.id}
+              href={`/questions/${q.id}`}
+              className="flex items-center gap-4 rounded-md border p-3 hover:bg-accent transition-colors"
+            >
               <span className="flex-1 font-medium">{q.title}</span>
               <DifficultyBadge difficulty={q.difficulty} />
               <span className="text-sm text-muted-foreground">{q.company.name}</span>
-            </a>
+            </Link>
           ))}
         </div>
       </section>
