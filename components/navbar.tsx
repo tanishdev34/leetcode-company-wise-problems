@@ -1,16 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./search-bar";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
+    setSigningOut(true);
     await signOut();
     router.push("/");
     router.refresh();
@@ -25,7 +29,9 @@ export function Navbar() {
         {session?.user ? (
           <div className="flex items-center gap-3">
             <Link href="/dashboard"><Button variant="ghost" size="sm">Dashboard</Button></Link>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>Sign Out</Button>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={signingOut}>
+              {signingOut ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Signing out...</> : "Sign Out"}
+            </Button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
