@@ -18,7 +18,7 @@ export async function getCompanies(): Promise<
 > {
   try {
     const companies = await prisma.company.findMany({
-      include: { _count: { select: { questions: true } } },
+      include: { _count: { select: { companyQuestions: { where: { timePeriod: "ALL" } } } } },
       orderBy: { name: "asc" },
     });
     const totalQuestions = await prisma.question.count();
@@ -26,7 +26,7 @@ export async function getCompanies(): Promise<
       success: true,
       data: {
         companies: companies.map((c) => ({
-          id: c.id, name: c.name, slug: c.slug, questionCount: c._count.questions,
+          id: c.id, name: c.name, slug: c.slug, questionCount: c._count.companyQuestions,
         })),
         totalQuestions,
         totalCompanies: companies.length,
@@ -65,49 +65,42 @@ export async function getCompanyQuestions(
     } catch {}
 
     const where = { companyId: company.id, timePeriod };
-    const totalQuestions = await prisma.question.count({ where });
+    const totalQuestions = await prisma.companyQuestion.count({ where });
     const totalPages = Math.ceil(totalQuestions / pageSize);
 
-    if (userId) {
-      const questions = await prisma.question.findMany({
-        where,
-        orderBy: [{ frequency: "desc" }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        include: { userQuestions: { where: { userId }, select: { solved: true, solvedAt: true } } },
-      });
-
-      return {
-        success: true,
-        data: {
-          questions: questions.map((q) => ({
-            id: q.id, title: q.title, leetcodeUrl: q.leetcodeUrl,
-            difficulty: q.difficulty, topics: q.topics,
-            frequency: q.frequency, acceptanceRate: q.acceptanceRate,
-            solved: q.userQuestions?.[0]?.solved || false,
-          })),
-          totalPages, currentPage: page,
-        },
-      };
-    }
-
-    const questions = await prisma.question.findMany({
+    const cqs = await prisma.companyQuestion.findMany({
       where,
+      include: { question: true },
       orderBy: [{ frequency: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
 
+    let solvedSet = new Set<string>();
+    if (userId) {
+      const questionIds = cqs.map((cq) => cq.questionId);
+      const userQuestions = await prisma.userQuestion.findMany({
+        where: { userId, questionId: { in: questionIds }, solved: true },
+        select: { questionId: true },
+      });
+      solvedSet = new Set(userQuestions.map((uq) => uq.questionId));
+    }
+
     return {
       success: true,
       data: {
-        questions: questions.map((q) => ({
-          id: q.id, title: q.title, leetcodeUrl: q.leetcodeUrl,
-          difficulty: q.difficulty, topics: q.topics,
-          frequency: q.frequency, acceptanceRate: q.acceptanceRate,
-          solved: false,
+        questions: cqs.map((cq) => ({
+          id: cq.question.id,
+          title: cq.question.title,
+          leetcodeUrl: cq.question.leetcodeUrl,
+          difficulty: cq.question.difficulty,
+          topics: cq.question.topics,
+          frequency: cq.frequency,
+          acceptanceRate: cq.question.acceptanceRate,
+          solved: solvedSet.has(cq.questionId),
         })),
-        totalPages, currentPage: page,
+        totalPages,
+        currentPage: page,
       },
     };
   } catch {
@@ -138,20 +131,21 @@ export async function getQuestionDetail(
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        company: { select: { name: true, slug: true } },
+        companyQuestions: {
+          include: { company: { select: { name: true, slug: true } } },
+          orderBy: { frequency: "desc" },
+        },
       },
     });
 
     if (!question) return { success: false, error: "Question not found" };
 
-    // Find all companies that have this question (same leetcodeUrl)
-    const allVersions = await prisma.question.findMany({
-      where: { leetcodeUrl: question.leetcodeUrl, timePeriod: "ALL" },
-      include: { company: { select: { name: true, slug: true } } },
-    });
-    const companies = allVersions
-      .map((v) => v.company)
-      .filter((c, i, arr) => arr.findIndex((x) => x.slug === c.slug) === i);
+    const seen = new Set<string>();
+    const companies = question.companyQuestions
+      .map((cq) => cq.company)
+      .filter((c) => (seen.has(c.slug) ? false : seen.add(c.slug) && true));
+
+    const frequency = question.companyQuestions.reduce((max, cq) => Math.max(max, cq.frequency), 0);
 
     let userId: string | null = null;
     try {
@@ -187,7 +181,7 @@ export async function getQuestionDetail(
         leetcodeUrl: question.leetcodeUrl,
         difficulty: question.difficulty,
         topics: question.topics,
-        frequency: question.frequency,
+        frequency,
         acceptanceRate: question.acceptanceRate,
         companies,
         solved,
@@ -280,11 +274,14 @@ export async function getNotes(
       where: { userId_questionId: { userId: session.user.id, questionId } },
       select: { notes: true, code: true, language: true },
     });
-    return { success: true, data: { 
-      notes: userQuestion?.notes || "", 
-      code: userQuestion?.code || "",
-      language: userQuestion?.language || "cpp"
-    } };
+    return {
+      success: true,
+      data: {
+        notes: userQuestion?.notes || "",
+        code: userQuestion?.code || "",
+        language: userQuestion?.language || "cpp",
+      },
+    };
   } catch {
     return { success: false, error: "Failed to fetch notes" };
   }

@@ -3,11 +3,11 @@ import { CompaniesFilter } from "./companies-filter";
 
 export default async function CompaniesPage() {
   const companies = await prisma.company.findMany({
-    include: { _count: { select: { questions: true } } },
+    include: { _count: { select: { companyQuestions: { where: { timePeriod: "ALL" } } } } },
     orderBy: { name: "asc" },
   });
 
-  const filtered = companies.filter((c) => c._count.questions > 0);
+  const filtered = companies.filter((c) => c._count.companyQuestions > 0);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
@@ -16,7 +16,7 @@ export default async function CompaniesPage() {
         companies={filtered.map((c) => ({
           name: c.name,
           slug: c.slug,
-          questionCount: c._count.questions,
+          questionCount: c._count.companyQuestions,
         }))}
       />
     </div>

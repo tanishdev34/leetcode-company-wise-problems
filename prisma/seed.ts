@@ -118,30 +118,32 @@ async function seedCompany(companyName: string): Promise<number> {
         const acceptanceRate = parseFloat(row.acceptanceRate) || 0;
         const topics = parseTopics(row.topics);
 
-        await prisma.question.upsert({
-          where: {
-            leetcodeUrl_companyId_timePeriod: {
-              leetcodeUrl: row.link,
-              companyId: company.id,
-              timePeriod,
-            },
-          },
-          update: {
-            title: row.title,
-            difficulty,
-            frequency,
-            acceptanceRate,
-            topics,
-          },
+        const question = await prisma.question.upsert({
+          where: { leetcodeUrl: row.link },
+          update: { title: row.title, difficulty, acceptanceRate, topics },
           create: {
             title: row.title,
             leetcodeUrl: row.link,
             difficulty,
-            frequency,
             acceptanceRate,
             topics,
+          },
+        });
+
+        await prisma.companyQuestion.upsert({
+          where: {
+            questionId_companyId_timePeriod: {
+              questionId: question.id,
+              companyId: company.id,
+              timePeriod,
+            },
+          },
+          update: { frequency },
+          create: {
+            questionId: question.id,
             companyId: company.id,
             timePeriod,
+            frequency,
           },
         });
         questionCount++;

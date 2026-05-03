@@ -77,31 +77,40 @@ model Account {
 }
 
 model Company {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  slug      String     @unique
-  questions Question[]
+  id               String            @id @default(cuid())
+  name             String            @unique
+  slug             String            @unique
+  companyQuestions CompanyQuestion[]
 
   @@index([slug])
 }
 
 model Question {
-  id             String         @id @default(cuid())
-  title          String
-  leetcodeUrl    String
-  difficulty     Difficulty
-  topics         String[]
-  frequency      Float
-  acceptanceRate Float
-  companyId      String
-  timePeriod     TimePeriod
-  createdAt      DateTime       @default(now())
-  company        Company        @relation(fields: [companyId], references: [id])
-  userQuestions  UserQuestion[]
+  id               String            @id @default(cuid())
+  title            String
+  leetcodeUrl      String            @unique
+  difficulty       Difficulty
+  topics           String[]
+  acceptanceRate   Float
+  createdAt        DateTime          @default(now())
+  userQuestions    UserQuestion[]
+  companyQuestions CompanyQuestion[]
 
-  @@unique([leetcodeUrl, companyId, timePeriod])
-  @@index([companyId])
   @@index([difficulty])
+}
+
+model CompanyQuestion {
+  id         String     @id @default(cuid())
+  questionId String
+  companyId  String
+  timePeriod TimePeriod
+  frequency  Float      @default(0)
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  company    Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, companyId, timePeriod])
+  @@index([questionId])
+  @@index([companyId])
 }
 
 model UserQuestion {

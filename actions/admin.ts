@@ -52,19 +52,12 @@ export async function addQuestion(data: {
       create: { name: data.companyName, slug },
     });
 
-    await prisma.question.upsert({
-      where: {
-        leetcodeUrl_companyId_timePeriod: {
-          leetcodeUrl: data.leetcodeUrl,
-          companyId: company.id,
-          timePeriod: data.timePeriod as TimePeriod,
-        },
-      },
+    const question = await prisma.question.upsert({
+      where: { leetcodeUrl: data.leetcodeUrl },
       update: {
         title: data.title,
         difficulty: data.difficulty as Difficulty,
         topics: data.topics.split(",").map((t) => t.trim()).filter(Boolean),
-        frequency: data.frequency,
         acceptanceRate: data.acceptanceRate,
       },
       create: {
@@ -72,10 +65,24 @@ export async function addQuestion(data: {
         leetcodeUrl: data.leetcodeUrl,
         difficulty: data.difficulty as Difficulty,
         topics: data.topics.split(",").map((t) => t.trim()).filter(Boolean),
-        frequency: data.frequency,
         acceptanceRate: data.acceptanceRate,
+      },
+    });
+
+    await prisma.companyQuestion.upsert({
+      where: {
+        questionId_companyId_timePeriod: {
+          questionId: question.id,
+          companyId: company.id,
+          timePeriod: data.timePeriod as TimePeriod,
+        },
+      },
+      update: { frequency: data.frequency },
+      create: {
+        questionId: question.id,
         companyId: company.id,
         timePeriod: data.timePeriod as TimePeriod,
+        frequency: data.frequency,
       },
     });
 
@@ -117,19 +124,13 @@ export async function addQuestionsFromCSV(
           skipped++;
           continue;
         }
-        await prisma.question.upsert({
-          where: {
-            leetcodeUrl_companyId_timePeriod: {
-              leetcodeUrl: row.leetcodeUrl,
-              companyId: company.id,
-              timePeriod: timePeriod as TimePeriod,
-            },
-          },
+
+        const question = await prisma.question.upsert({
+          where: { leetcodeUrl: row.leetcodeUrl },
           update: {
             title: row.title,
             difficulty: diffRaw as Difficulty,
             topics: row.topics.split(",").map((t) => t.trim()).filter(Boolean),
-            frequency: parseFloat(row.frequency) || 0,
             acceptanceRate: parseFloat(row.acceptanceRate) || 0,
           },
           create: {
@@ -137,12 +138,27 @@ export async function addQuestionsFromCSV(
             leetcodeUrl: row.leetcodeUrl,
             difficulty: diffRaw as Difficulty,
             topics: row.topics.split(",").map((t) => t.trim()).filter(Boolean),
-            frequency: parseFloat(row.frequency) || 0,
             acceptanceRate: parseFloat(row.acceptanceRate) || 0,
-            companyId: company.id,
-            timePeriod: timePeriod as TimePeriod,
           },
         });
+
+        await prisma.companyQuestion.upsert({
+          where: {
+            questionId_companyId_timePeriod: {
+              questionId: question.id,
+              companyId: company.id,
+              timePeriod: timePeriod as TimePeriod,
+            },
+          },
+          update: { frequency: parseFloat(row.frequency) || 0 },
+          create: {
+            questionId: question.id,
+            companyId: company.id,
+            timePeriod: timePeriod as TimePeriod,
+            frequency: parseFloat(row.frequency) || 0,
+          },
+        });
+
         added++;
       } catch {
         errors.push(`"${row.title}": failed to upsert`);

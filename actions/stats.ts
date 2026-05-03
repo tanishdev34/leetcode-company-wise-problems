@@ -25,53 +25,61 @@ export async function getDashboardStats(): Promise<
 
     const userId = session.user.id;
 
-    const totalSolved = await prisma.userQuestion.count({
+    const solvedUserQuestions = await prisma.userQuestion.findMany({
       where: { userId, solved: true },
+      select: { questionId: true, solvedAt: true },
     });
 
-    const byDifficulty = await prisma.userQuestion.groupBy({
-      by: ["questionId"], where: { userId, solved: true }, _count: true,
-    });
+    const totalSolved = solvedUserQuestions.length;
+    const solvedIds = new Set(solvedUserQuestions.map((uq) => uq.questionId));
 
-    const questionIds = byDifficulty.map((uq) => uq.questionId);
-    const questions = await prisma.question.findMany({
-      where: { id: { in: questionIds } }, select: { id: true, difficulty: true },
+    const solvedQuestions = await prisma.question.findMany({
+      where: { id: { in: Array.from(solvedIds) } },
+      select: { id: true, difficulty: true },
     });
 
     const difficultyCounts = { EASY: 0, MEDIUM: 0, HARD: 0 };
-    for (const q of questions) difficultyCounts[q.difficulty]++;
-
-    const userQuestions = await prisma.userQuestion.findMany({
-      where: { userId, solved: true },
-      include: { question: { select: { companyId: true } } },
-    });
-
-    const companySolvedMap = new Map<string, number>();
-    for (const uq of userQuestions) {
-      companySolvedMap.set(uq.question.companyId, (companySolvedMap.get(uq.question.companyId) || 0) + 1);
-    }
+    for (const q of solvedQuestions) difficultyCounts[q.difficulty]++;
 
     const companies = await prisma.company.findMany({
-      include: { _count: { select: { questions: { where: { timePeriod: "ALL" } } } } },
+      include: {
+        companyQuestions: {
+          where: { timePeriod: "ALL" },
+          select: { questionId: true },
+        },
+        _count: { select: { companyQuestions: { where: { timePeriod: "ALL" } } } },
+      },
     });
 
     const byCompany = companies
-      .map((c) => ({ name: c.name, slug: c.slug, solved: companySolvedMap.get(c.id) || 0, total: c._count.questions }))
+      .map((c) => ({
+        name: c.name,
+        slug: c.slug,
+        total: c._count.companyQuestions,
+        solved: c.companyQuestions.filter((cq) => solvedIds.has(cq.questionId)).length,
+      }))
       .filter((c) => c.total > 0)
       .sort((a, b) => b.solved - a.solved);
 
     const recentActivity = await prisma.userQuestion.findMany({
-      where: { userId, solved: true }, orderBy: { solvedAt: "desc" }, take: 10,
+      where: { userId, solved: true },
+      orderBy: { solvedAt: "desc" },
+      take: 10,
       include: { question: { select: { id: true, title: true, leetcodeUrl: true, difficulty: true } } },
     });
 
     return {
       success: true,
       data: {
-        totalSolved, byDifficulty: difficultyCounts, byCompany,
+        totalSolved,
+        byDifficulty: difficultyCounts,
+        byCompany,
         recentActivity: recentActivity.map((uq) => ({
-          id: uq.question.id, title: uq.question.title,
-          leetcodeUrl: uq.question.leetcodeUrl, difficulty: uq.question.difficulty, solvedAt: uq.solvedAt,
+          id: uq.question.id,
+          title: uq.question.title,
+          leetcodeUrl: uq.question.leetcodeUrl,
+          difficulty: uq.question.difficulty,
+          solvedAt: uq.solvedAt,
         })),
       },
     };

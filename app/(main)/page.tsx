@@ -64,8 +64,8 @@ export default async function HomePage() {
   const [companies, totalQuestions, totalCompanies, recentQuestions, daily] =
     await Promise.all([
       prisma.company.findMany({
-        include: { _count: { select: { questions: true } } },
-        orderBy: { questions: { _count: "desc" } },
+        include: { _count: { select: { companyQuestions: true } } },
+        orderBy: { companyQuestions: { _count: "desc" } },
         take: 12,
       }),
       prisma.question.count(),
@@ -73,7 +73,12 @@ export default async function HomePage() {
       prisma.question.findMany({
         orderBy: { createdAt: "desc" },
         take: 10,
-        include: { company: { select: { name: true, slug: true } } },
+        include: {
+          companyQuestions: {
+            take: 1,
+            include: { company: { select: { name: true, slug: true } } },
+          },
+        },
       }),
       fetchDailyProblem(),
     ])
@@ -124,7 +129,7 @@ export default async function HomePage() {
               key={c.id}
               name={c.name}
               slug={c.slug}
-              questionCount={c._count.questions}
+              questionCount={c._count.companyQuestions}
             />
           ))}
         </div>
@@ -142,7 +147,7 @@ export default async function HomePage() {
               <span className="flex-1 font-medium">{q.title}</span>
               <DifficultyBadge difficulty={q.difficulty} />
               <span className="text-sm text-muted-foreground">
-                {q.company.name}
+                {q.companyQuestions[0]?.company.name ?? ""}
               </span>
             </Link>
           ))}

@@ -19,15 +19,14 @@ export async function GET(request: NextRequest) {
         q."leetcodeUrl",
         q.difficulty,
         q.topics,
-        q.frequency,
         q."acceptanceRate",
-        c.name as "companyName",
-        c.slug as "companySlug",
+        (SELECT MAX(cq.frequency) FROM "CompanyQuestion" cq WHERE cq."questionId" = q.id) AS frequency,
+        (SELECT c.name FROM "CompanyQuestion" cq JOIN "Company" c ON cq."companyId" = c.id WHERE cq."questionId" = q.id ORDER BY cq.frequency DESC LIMIT 1) AS "companyName",
+        (SELECT c.slug FROM "CompanyQuestion" cq JOIN "Company" c ON cq."companyId" = c.id WHERE cq."questionId" = q.id ORDER BY cq.frequency DESC LIMIT 1) AS "companySlug",
         similarity(q.title, ${query}) as score
       FROM "Question" q
-      JOIN "Company" c ON q."companyId" = c.id
       WHERE q.title % ${query}
-      ORDER BY score DESC, q.frequency DESC
+      ORDER BY score DESC, frequency DESC
       LIMIT ${pageSize}
       OFFSET ${(page - 1) * pageSize}
     `;
