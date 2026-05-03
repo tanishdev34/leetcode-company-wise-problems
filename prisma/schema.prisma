@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -22,16 +23,19 @@ enum TimePeriod {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   name          String?
   passwordHash  String?
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   sessions      Session[]
   accounts      Account[]
   userQuestions UserQuestion[]
+  emailVerified Boolean        @default(false)
+
+  @@map("user")
 }
 
 model Session {
@@ -44,7 +48,9 @@ model Session {
   ipAddress String?
   userAgent String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
+  @@map("session")
 }
 
 model Account {
@@ -62,8 +68,10 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([providerId, accountId])
   @@index([userId])
+  @@map("account")
 }
 
 model Company {
@@ -71,11 +79,12 @@ model Company {
   name      String     @unique
   slug      String     @unique
   questions Question[]
+
   @@index([slug])
 }
 
 model Question {
-  id             String     @id @default(cuid())
+  id             String         @id @default(cuid())
   title          String
   leetcodeUrl    String
   difficulty     Difficulty
@@ -84,9 +93,10 @@ model Question {
   acceptanceRate Float
   companyId      String
   timePeriod     TimePeriod
-  createdAt      DateTime   @default(now())
-  company        Company    @relation(fields: [companyId], references: [id])
+  createdAt      DateTime       @default(now())
+  company        Company        @relation(fields: [companyId], references: [id])
   userQuestions  UserQuestion[]
+
   @@unique([leetcodeUrl, companyId, timePeriod])
   @@index([companyId])
   @@index([difficulty])
@@ -99,11 +109,25 @@ model UserQuestion {
   solved     Boolean   @default(false)
   solvedAt   DateTime?
   notes      String?
+  code       String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   question   Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
   @@unique([userId, questionId])
   @@index([userId])
   @@index([questionId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

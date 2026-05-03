@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 interface CompanyProgressProps {
-  companies: { name: string; solved: number; total: number }[];
+  companies: { name: string; slug: string; solved: number; total: number }[];
 }
 
 export function CompanyProgress({ companies }: CompanyProgressProps) {
@@ -15,15 +16,17 @@ export function CompanyProgress({ companies }: CompanyProgressProps) {
       {withProgress.map((c) => {
         const progress = c.total > 0 ? (c.solved / c.total) * 100 : 0;
         return (
-          <Card key={c.name} className="p-4">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">{c.name}</h3>
-                <span className="text-sm text-muted-foreground">{c.solved}/{c.total}</span>
+          <Link key={c.slug} href={`/companies/${c.slug}`}>
+            <Card className="p-4 transition-colors hover:bg-accent">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">{c.name}</h3>
+                  <span className="text-sm text-muted-foreground">{c.solved}/{c.total}</span>
+                </div>
+                <Progress value={progress} className="h-2" />
               </div>
-              <Progress value={progress} className="h-2" />
-            </div>
-          </Card>
+            </Card>
+          </Link>
         );
       })}
     </div>

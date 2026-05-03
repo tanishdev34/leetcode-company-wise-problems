@@ -12,7 +12,7 @@ export async function getDashboardStats(): Promise<
   ActionResult<{
     totalSolved: number;
     byDifficulty: { EASY: number; MEDIUM: number; HARD: number };
-    byCompany: { name: string; solved: number; total: number }[];
+    byCompany: { name: string; slug: string; solved: number; total: number }[];
     recentActivity: {
       id: string; title: string; leetcodeUrl: string;
       difficulty: "EASY" | "MEDIUM" | "HARD"; solvedAt: Date | null;
@@ -56,7 +56,7 @@ export async function getDashboardStats(): Promise<
     });
 
     const byCompany = companies
-      .map((c) => ({ name: c.name, solved: companySolvedMap.get(c.id) || 0, total: c._count.questions }))
+      .map((c) => ({ name: c.name, slug: c.slug, solved: companySolvedMap.get(c.id) || 0, total: c._count.questions }))
       .filter((c) => c.total > 0)
       .sort((a, b) => b.solved - a.solved);
 

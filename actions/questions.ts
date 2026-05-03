@@ -115,6 +115,89 @@ export async function getCompanyQuestions(
   }
 }
 
+export async function getQuestionDetail(
+  questionId: string
+): Promise<
+  ActionResult<{
+    id: string;
+    title: string;
+    leetcodeUrl: string;
+    difficulty: "EASY" | "MEDIUM" | "HARD";
+    topics: string[];
+    frequency: number;
+    acceptanceRate: number;
+    companies: { name: string; slug: string }[];
+    solved: boolean;
+    solvedAt: Date | null;
+    notes: string;
+    code: string;
+  }>
+> {
+  try {
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        company: { select: { name: true, slug: true } },
+      },
+    });
+
+    if (!question) return { success: false, error: "Question not found" };
+
+    // Find all companies that have this question (same leetcodeUrl)
+    const allVersions = await prisma.question.findMany({
+      where: { leetcodeUrl: question.leetcodeUrl, timePeriod: "ALL" },
+      include: { company: { select: { name: true, slug: true } } },
+    });
+    const companies = allVersions
+      .map((v) => v.company)
+      .filter((c, i, arr) => arr.findIndex((x) => x.slug === c.slug) === i);
+
+    let userId: string | null = null;
+    try {
+      const session = await auth.api.getSession({ headers: await headers() });
+      userId = session?.user?.id || null;
+    } catch {}
+
+    let solved = false;
+    let solvedAt: Date | null = null;
+    let notes = "";
+    let code = "";
+
+    if (userId) {
+      const uq = await prisma.userQuestion.findUnique({
+        where: { userId_questionId: { userId, questionId } },
+        select: { solved: true, solvedAt: true, notes: true, code: true },
+      });
+      if (uq) {
+        solved = uq.solved;
+        solvedAt = uq.solvedAt;
+        notes = uq.notes || "";
+        code = uq.code || "";
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        id: question.id,
+        title: question.title,
+        leetcodeUrl: question.leetcodeUrl,
+        difficulty: question.difficulty,
+        topics: question.topics,
+        frequency: question.frequency,
+        acceptanceRate: question.acceptanceRate,
+        companies,
+        solved,
+        solvedAt,
+        notes,
+        code,
+      },
+    };
+  } catch {
+    return { success: false, error: "Failed to fetch question detail" };
+  }
+}
+
 export async function toggleSolved(
   questionId: string
 ): Promise<ActionResult<{ solved: boolean; solvedAt: Date | null }>> {
@@ -163,18 +246,37 @@ export async function saveNotes(
   }
 }
 
+export async function saveCode(
+  questionId: string, code: string
+): Promise<ActionResult<{ success: boolean }>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session?.user) return { success: false, error: "Not authenticated" };
+    if (code.length > 50000) return { success: false, error: "Code exceeds 50,000 characters" };
+
+    await prisma.userQuestion.upsert({
+      where: { userId_questionId: { userId: session.user.id, questionId } },
+      update: { code },
+      create: { userId: session.user.id, questionId, code },
+    });
+    return { success: true, data: { success: true } };
+  } catch {
+    return { success: false, error: "Failed to save code" };
+  }
+}
+
 export async function getNotes(
   questionId: string
-): Promise<ActionResult<{ notes: string }>> {
+): Promise<ActionResult<{ notes: string; code: string }>> {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user) return { success: false, error: "Not authenticated" };
 
     const userQuestion = await prisma.userQuestion.findUnique({
       where: { userId_questionId: { userId: session.user.id, questionId } },
-      select: { notes: true },
+      select: { notes: true, code: true },
     });
-    return { success: true, data: { notes: userQuestion?.notes || "" } };
+    return { success: true, data: { notes: userQuestion?.notes || "", code: userQuestion?.code || "" } };
   } catch {
     return { success: false, error: "Failed to fetch notes" };
   }
