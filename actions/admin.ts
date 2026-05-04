@@ -8,11 +8,7 @@ import { Difficulty, TimePeriod } from "../generated/prisma/client";
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) throw new Error("Not authenticated");
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true },
-  });
-  if (user?.role !== "admin") throw new Error("Forbidden");
+  if (session.user.role !== "admin") throw new Error("Forbidden");
   return session.user;
 }
 
