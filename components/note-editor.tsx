@@ -148,6 +148,7 @@ interface NoteEditorProps {
   initialHints?: string;
   initialCode?: string;
   initialLanguage?: string;
+  isAdmin?: boolean;
 }
 
 const LANGUAGES = [
@@ -184,6 +185,7 @@ export function NoteEditor({
   initialHints = "",
   initialCode = "",
   initialLanguage = "cpp",
+  isAdmin = false,
 }: NoteEditorProps) {
   const [hints, setHints] = useState(initialHints);
   const [notes, setNotes] = useState(initialNotes);
@@ -552,53 +554,55 @@ export function NoteEditor({
                 >
                   {codeEditMode ? "Preview" : "Edit"}
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleGenerate}
-                  disabled={generating || !code.trim()}
-                >
-                  {generating ? (
-                    <>
-                      <svg
-                        className="mr-1.5 h-3.5 w-3.5 animate-spin"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
+                {isAdmin && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleGenerate}
+                    disabled={generating || !code.trim()}
+                  >
+                    {generating ? (
+                      <>
+                        <svg
+                          className="mr-1.5 h-3.5 w-3.5 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="mr-1.5 h-3.5 w-3.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
                           stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="mr-1.5 h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        <line x1="9" y1="10" x2="15" y2="10" />
-                      </svg>
-                      Generate
-                    </>
-                  )}
-                </Button>
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                          <line x1="9" y1="10" x2="15" y2="10" />
+                        </svg>
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
               {codeEditMode ? (
                 <Textarea

@@ -366,6 +366,7 @@ export async function analyzeCode(
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return { success: false, error: "Not authenticated" }
+    if (session.user.role !== "admin") return { success: false, error: "Only admins can generate analyses" }
     if (!code.trim()) return { success: false, error: "No code to analyze" }
 
     const { generateText, Output } = await import("ai")
