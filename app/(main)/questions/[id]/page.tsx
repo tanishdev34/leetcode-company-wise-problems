@@ -26,6 +26,7 @@ interface QuestionData {
   notes: string;
   code: string;
   language: string;
+  hints: string;
 }
 
 export default function QuestionDetailPage() {
@@ -157,6 +158,7 @@ export default function QuestionDetailPage() {
         <NoteEditor
           questionId={data.id}
           initialNotes={data.notes}
+          initialHints={data.hints}
           initialCode={data.code}
           initialLanguage={data.language}
         />

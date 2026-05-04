@@ -122,6 +122,7 @@ model UserQuestion {
   notes      String?
   code       String?
   language   String    @default("cpp")
+  hints      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)

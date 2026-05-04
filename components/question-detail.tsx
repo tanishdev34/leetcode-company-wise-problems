@@ -11,13 +11,27 @@ interface QuestionDetailProps {
 
 export function QuestionDetail({ questionId, isAuthenticated }: QuestionDetailProps) {
   const [notes, setNotes] = useState<string | null>(null);
+  const [hints, setHints] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  const [language, setLanguage] = useState<string>("cpp");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) { setLoading(false); return; }
     getNotes(questionId)
-      .then((result) => { if (result.success) setNotes(result.data.notes); else setNotes(""); })
-      .catch(() => setNotes(""))
+      .then((result) => {
+        if (result.success) {
+          setNotes(result.data.notes);
+          setHints(result.data.hints);
+          setCode(result.data.code);
+          setLanguage(result.data.language);
+        } else {
+          setNotes("");
+          setHints("");
+          setCode("");
+        }
+      })
+      .catch(() => { setNotes(""); setHints(""); setCode(""); })
       .finally(() => setLoading(false));
   }, [questionId, isAuthenticated]);
 
@@ -29,7 +43,13 @@ export function QuestionDetail({ questionId, isAuthenticated }: QuestionDetailPr
   }
   return (
     <div className="px-4 py-3">
-      <NoteEditor questionId={questionId} initialNotes={notes || ""} />
+      <NoteEditor
+        questionId={questionId}
+        initialNotes={notes || ""}
+        initialHints={hints || ""}
+        initialCode={code || ""}
+        initialLanguage={language}
+      />
     </div>
   );
 }
