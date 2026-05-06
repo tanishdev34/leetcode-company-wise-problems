@@ -36,6 +36,97 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
   }
 }
 
+// ── Shared styles matching the app's monospace, sharp, minimalist aesthetic ──
+
+const STYLES = {
+  body: `
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', monospace;
+    background: #0a0a0b;
+    margin: 0;
+    padding: 0;
+    color: #e4e4e7;
+  `,
+  container: `
+    max-width: 520px;
+    margin: 48px auto;
+    background: #18181b;
+    border: 1px solid #27272a;
+  `,
+  header: `
+    padding: 36px 32px 28px;
+    border-bottom: 1px solid #27272a;
+  `,
+  headerTitle: `
+    margin: 0;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a1a1aa;
+  `,
+  headerSub: `
+    margin: 4px 0 0;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: #52525b;
+    text-transform: uppercase;
+  `,
+  content: `
+    padding: 32px;
+  `,
+  title: `
+    margin: 0 0 16px;
+    font-size: 20px;
+    font-weight: 500;
+    color: #f4f4f5;
+    line-height: 1.4;
+  `,
+  badge: (color: string) => `
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: ${color};
+    border: 1px solid ${color}33;
+    background: ${color}11;
+  `,
+  tag: `
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 0 4px 4px 0;
+    font-size: 11px;
+    color: #a1a1aa;
+    border: 1px solid #27272a;
+  `,
+  button: (bg: string) => `
+    display: inline-block;
+    padding: 10px 24px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #fafafa;
+    background: ${bg};
+    text-decoration: none;
+    border: 1px solid ${bg};
+  `,
+  footer: `
+    padding: 20px 32px;
+    border-top: 1px solid #27272a;
+    text-align: center;
+    font-size: 11px;
+    color: #52525b;
+    letter-spacing: 0.03em;
+  `,
+  footerLink: `
+    color: #6366f1;
+    text-decoration: none;
+    border-bottom: 1px solid #6366f133;
+  `,
+};
+
 export function dailyQuestionEmailHtml(question: {
   questionTitle: string;
   questionLink: string;
@@ -43,9 +134,10 @@ export function dailyQuestionEmailHtml(question: {
   topicTags?: { name: string }[];
   date?: string;
 }): string {
-  const tags = question.topicTags
-    ?.map((t) => `<span style="background:#e2e8f0;padding:2px 8px;border-radius:4px;font-size:12px;margin:0 4px 4px 0;display:inline-block">${t.name}</span>`)
-    .join("") || "";
+  const tags =
+    question.topicTags
+      ?.map((t) => `<span style="${STYLES.tag}">${t.name}</span>`)
+      .join("") || "";
 
   const difficultyColor =
     question.difficulty === "Easy"
@@ -54,30 +146,47 @@ export function dailyQuestionEmailHtml(question: {
         ? "#eab308"
         : "#ef4444";
 
-  return `
-<!DOCTYPE html>
+  const dateStr =
+    question.date ||
+    new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+  return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;margin:0;padding:0">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:40px auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+<head><meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+</head>
+<body style="${STYLES.body}">
+  <table width="100%" cellpadding="0" cellspacing="0" style="${STYLES.container}">
     <tr>
-      <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center">
-        <h1 style="color:white;margin:0;font-size:24px">☀️ Daily LeetCode Problem</h1>
-        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">${question.date || new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+      <td style="${STYLES.header}">
+        <p style="${STYLES.headerTitle}">Daily Problem</p>
+        <p style="${STYLES.headerSub}">${dateStr}</p>
       </td>
     </tr>
     <tr>
-      <td style="padding:32px">
-        <h2 style="margin:0 0 8px;font-size:20px;color:#1e293b">${question.questionTitle}</h2>
-        <span style="display:inline-block;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;color:white;background:${difficultyColor};margin-bottom:16px">${question.difficulty}</span>
-        ${tags ? `<div style="margin-bottom:16px">${tags}</div>` : ""}
-        <a href="${question.questionLink}" target="_blank" style="display:inline-block;padding:12px 24px;background:#6366f1;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;margin-top:8px">🔗 Solve on LeetCode</a>
+      <td style="${STYLES.content}">
+        <p style="${STYLES.title}">${question.questionTitle}</p>
+        <span style="${STYLES.badge(difficultyColor)}">${question.difficulty}</span>
+        ${tags ? `<div style="margin-top:16px">${tags}</div>` : ""}
+        <div style="margin-top:24px">
+          <a href="${question.questionLink}" target="_blank" style="${STYLES.button("#6366f1")}">
+            Solve on LeetCode →
+          </a>
+        </div>
       </td>
     </tr>
     <tr>
-      <td style="padding:16px 32px;background:#f8fafc;text-align:center;font-size:12px;color:#94a3b8">
-        <p style="margin:0">You're receiving this because you subscribed to daily LeetCode reminders.</p>
-        <p style="margin:4px 0 0">To unsubscribe, visit your <a href="${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/dashboard" style="color:#6366f1">dashboard</a>.</p>
+      <td style="${STYLES.footer}">
+        <p style="margin:0">LC Grind · daily practice</p>
+        <p style="margin:4px 0 0">
+          <a href="${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/dashboard" style="${STYLES.footerLink}">Unsubscribe</a>
+        </p>
       </td>
     </tr>
   </table>
@@ -100,29 +209,35 @@ export function contestReminderEmailHtml(contest: {
     timeZoneName: "short",
   });
 
-  return `
-<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;margin:0;padding:0">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:40px auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+<head><meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+</head>
+<body style="${STYLES.body}">
+  <table width="100%" cellpadding="0" cellspacing="0" style="${STYLES.container}">
     <tr>
-      <td style="background:linear-gradient(135deg,#f59e0b,#ef4444);padding:32px;text-align:center">
-        <h1 style="color:white;margin:0;font-size:24px">🏆 Contest Reminder</h1>
-        <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px">Starts in about 1 hour!</p>
+      <td style="${STYLES.header}">
+        <p style="${STYLES.headerTitle}">Contest Reminder</p>
+        <p style="${STYLES.headerSub}">Starting soon</p>
       </td>
     </tr>
     <tr>
-      <td style="padding:32px">
-        <h2 style="margin:0 0 8px;font-size:20px;color:#1e293b">${contest.title}</h2>
-        <p style="color:#64748b;font-size:14px;margin:0 0 16px">⏰ ${formattedTime}</p>
-        <a href="https://leetcode.com/contest/${contest.titleSlug}" target="_blank" style="display:inline-block;padding:12px 24px;background:#f59e0b;color:white;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px">🚀 Join Contest</a>
+      <td style="${STYLES.content}">
+        <p style="${STYLES.title}">${contest.title}</p>
+        <div style="margin-bottom:20px;font-size:13px;color:#a1a1aa;letter-spacing:0.02em">${formattedTime}</div>
+        <a href="https://leetcode.com/contest/${contest.titleSlug}" target="_blank" style="${STYLES.button("#eab308")}">
+          Join Contest →
+        </a>
       </td>
     </tr>
     <tr>
-      <td style="padding:16px 32px;background:#f8fafc;text-align:center;font-size:12px;color:#94a3b8">
-        <p style="margin:0">You're receiving this because you subscribed to contest reminders.</p>
-        <p style="margin:4px 0 0">To unsubscribe, visit your <a href="${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/dashboard" style="color:#6366f1">dashboard</a>.</p>
+      <td style="${STYLES.footer}">
+        <p style="margin:0">LC Grind · contest alerts</p>
+        <p style="margin:4px 0 0">
+          <a href="${process.env.BETTER_AUTH_URL || "http://localhost:3000"}/dashboard" style="${STYLES.footerLink}">Unsubscribe</a>
+        </p>
       </td>
     </tr>
   </table>
