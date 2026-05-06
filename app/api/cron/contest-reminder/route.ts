@@ -6,11 +6,14 @@ import { sendEmail, contestReminderEmailHtml } from "@/lib/email";
 const CONTESTS_API = "https://alfa-leetcode-api.onrender.com/contests/upcoming";
 const NOTIFIED_PREFIX = "contest:notified:";
 
-export async function GET() {
+export async function GET(request: Request) {
   // Verify cron secret
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get("secret");
   if (
     process.env.CRON_SECRET &&
-    process.env.CRON_SECRET !== "development"
+    process.env.CRON_SECRET !== "development" &&
+    secret !== process.env.CRON_SECRET
   ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
