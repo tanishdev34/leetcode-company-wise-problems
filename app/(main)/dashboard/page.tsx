@@ -8,6 +8,7 @@ import { CompanyProgress } from "@/components/company-progress";
 import { RecentActivity } from "@/components/recent-activity";
 import { LeetcodeUsernameForm } from "@/components/leetcode-username-form";
 import { LeetcodeStats } from "@/components/leetcode-stats";
+import { EmailSubscriptionToggle } from "@/components/email-subscription-toggle";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -44,8 +45,9 @@ export default async function DashboardPage() {
           ) : (
             <>
               <LeetcodeStats username={user.leetcodeUsername} />
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap items-start gap-4">
                 <LeetcodeUsernameForm initialValue={user.leetcodeUsername} />
+                <EmailSubscriptionToggle />
               </div>
             </>
           )}

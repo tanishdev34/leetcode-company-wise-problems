@@ -36,6 +36,7 @@ model User {
   emailVerified    Boolean        @default(false)
   role             String         @default("user")
   leetcodeUsername String?
+  emailSubscribed  Boolean        @default(false)
 
   @@map("user")
 }

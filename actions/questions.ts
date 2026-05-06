@@ -86,26 +86,63 @@ export async function getCompanyQuestions(
     } catch {}
 
     const where = { companyId: company.id, timePeriod }
-    const totalQuestions = await prisma.companyQuestion.count({ where })
-    const totalPages = Math.ceil(totalQuestions / pageSize)
 
-    const cqs = await prisma.companyQuestion.findMany({
+    // Fetch all question IDs and frequencies for this company (lightweight)
+    const allCqs = await prisma.companyQuestion.findMany({
       where,
-      include: { question: true },
-      orderBy: [{ frequency: "desc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      select: { questionId: true, frequency: true },
     })
 
-    let solvedSet = new Set<string>()
+    const totalQuestions = allCqs.length
+    const totalPages = Math.ceil(totalQuestions / pageSize)
+
+    // Fetch user's solved questions with timestamps
+    let solvedMap = new Map<string, Date | null>()
     if (userId) {
-      const questionIds = cqs.map((cq) => cq.questionId)
+      const questionIds = allCqs.map((cq) => cq.questionId)
       const userQuestions = await prisma.userQuestion.findMany({
         where: { userId, questionId: { in: questionIds }, solved: true },
-        select: { questionId: true },
+        select: { questionId: true, solvedAt: true },
       })
-      solvedSet = new Set(userQuestions.map((uq) => uq.questionId))
+      for (const uq of userQuestions) {
+        solvedMap.set(uq.questionId, uq.solvedAt)
+      }
     }
+
+    // Sort: solved first (by solvedAt desc), then unsolved (by frequency desc)
+    const sorted = [...allCqs].sort((a, b) => {
+      const aSolved = solvedMap.has(a.questionId)
+      const bSolved = solvedMap.has(b.questionId)
+
+      if (aSolved !== bSolved) {
+        return aSolved ? -1 : 1 // solved first
+      }
+
+      if (aSolved) {
+        // Both solved: most recently solved first
+        const aTime = solvedMap.get(a.questionId)?.getTime() ?? 0
+        const bTime = solvedMap.get(b.questionId)?.getTime() ?? 0
+        return bTime - aTime
+      }
+
+      // Both unsolved: highest frequency first
+      return b.frequency - a.frequency
+    })
+
+    // Paginate the sorted list
+    const paginatedIds = sorted
+      .slice((page - 1) * pageSize, page * pageSize)
+      .map((cq) => cq.questionId)
+
+    // Fetch full question details for the current page
+    const cqs = await prisma.companyQuestion.findMany({
+      where: { questionId: { in: paginatedIds }, companyId: company.id, timePeriod },
+      include: { question: true },
+    })
+
+    // Restore the sorted order
+    const idOrder = new Map(paginatedIds.map((id, idx) => [id, idx]))
+    cqs.sort((a, b) => (idOrder.get(a.questionId) ?? 0) - (idOrder.get(b.questionId) ?? 0))
 
     return {
       success: true,
@@ -118,7 +155,7 @@ export async function getCompanyQuestions(
           topics: cq.question.topics,
           frequency: cq.frequency,
           acceptanceRate: cq.question.acceptanceRate,
-          solved: solvedSet.has(cq.questionId),
+          solved: solvedMap.has(cq.questionId),
         })),
         totalPages,
         currentPage: page,
