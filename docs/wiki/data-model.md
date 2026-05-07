@@ -25,7 +25,7 @@ Each relation:
 | `name` | String? | Display name |
 | `passwordHash` | String? | For email/password auth |
 | `image` | String? | Avatar URL |
-| `role` | String | `"user"` or `"admin"` — checked by [[actions#analyzeCode]] |
+| `role` | String | `"user"` or `"admin"` — checked by [[actions#post-apianalyze]] |
 | `leetcodeUsername` | String? | Linked LeetCode handle — set via [[actions#profilets]] `saveLeetcodeUsername` |
 | `emailSubscribed` | Boolean | Default `false` — toggled via [[actions#emailts]] `toggleEmailSubscription`, used by [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]] |
 | `emailVerified` | Boolean | Default `false` |
@@ -95,12 +95,35 @@ Indexes: `questionId`, `companyId`
 | `solved` | Boolean | Default `false` — toggled via [[actions#toggleSolved]] |
 | `solvedAt` | DateTime? | When solved — used for sorting in [[actions#getCompanyQuestions-sorting-logic]] |
 | `notes` | String? | Markdown notes (max 10k chars) — edited via [[components#questions]] `NoteEditor` |
-| `code` | String? | Solution code (max 50k chars) — analyzed via [[actions#analyzeCode]] |
+| `code` | String? | Solution code (max 50k chars) — analyzed via [[actions#post-apianalyze]] |
 | `language` | String | Default `"cpp"` |
-| `hints` | String? | AI-generated hints — from [[actions#analyzeCode]] |
+| `hints` | String? | AI-generated hints — written by the worker behind [[actions#post-apianalyze]] |
 
 Unique: `(userId, questionId)`
 Indexes: `userId`, `questionId`
+
+### AnalysisJob (AI analysis queue)
+Tracks background AI analysis runs so the work survives the user closing the page.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key (also the polling key) |
+| `userId` | String | FK → User (cascade delete) |
+| `questionId` | String | FK → Question (cascade delete) |
+| `status` | String | `"pending" \| "running" \| "done" \| "error"` (default `"pending"`) |
+| `language` | String | Snapshot of language at submission time |
+| `code` | String | Snapshot of code at submission time |
+| `error` | String? | Last error message if a retry failed |
+| `attempts` | Int | Number of attempts so far (default 0) |
+| `maxAttempts` | Int | Max retry attempts (default 3) |
+| `createdAt` | DateTime | — |
+| `updatedAt` | DateTime | — |
+
+Indexes: `(userId, questionId, status)`, `(userId, questionId, createdAt)`
+
+Worker: `lib/analyze.ts` `processAnalysisJob(jobId)` — runs Cerebras + merges into [[#userquestion-user-progress]]; retries with exponential backoff (2s, 8s, 30s).
+
+Lifecycle: created by `POST /api/analyze`, scheduled via `next/server` `after()`, polled by client via `GET /api/analyze`.
 
 ### Verification
 Better Auth verification model (email verification). See [[configuration#better-auth]].

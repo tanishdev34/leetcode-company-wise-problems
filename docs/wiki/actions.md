@@ -24,7 +24,6 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | `saveCode(questionId, code, language?)` | Yes | `questionId, code (max 50k chars), language?` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `saveHints(questionId, hints)` | Yes | `questionId, hints (max 10k chars)` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `getNotes(questionId)` | Yes | `questionId` | `{ notes, code, language, hints }` | [[components#questions]] `QuestionDetail` | No |
-| `analyzeCode(questionId, code, language)` | **Admin** | `questionId, code, language` | `{ notes, hints }` (AI-generated) | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 
 ### `actions/stats.ts` — [[data-model#userquestion-user-progress]], [[data-model#question]]
 
@@ -99,6 +98,21 @@ Fetches daily LeetCode problem.
 ### `GET /api/leetcode/submissions`
 Fetches user submissions from LeetCode.
 - Returns: recent submissions
+
+### `POST /api/analyze`
+Enqueues an AI analysis job (admin only) and returns immediately.
+- Auth required, admin only
+- Body: `{ questionId: string, code: string, language: string }`
+- Creates an [[data-model#analysisjob-ai-analysis-queue]] row with `status: "pending"`, schedules `processAnalysisJob(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
+- If a `pending`/`running` job already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
+- The background worker (`lib/analyze.ts`) calls Cerebras, merges output into [[data-model#userquestion-user-progress]] `notes`/`hints`, and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- Called by: [[components#questions]] `NoteEditor` Generate button.
+
+### `GET /api/analyze?questionId=`
+Returns the latest analysis job for the current user + question.
+- Auth required
+- Returns: `{ job: { id, status, attempts, maxAttempts, error, updatedAt } | null }`
+- Called by: [[components#questions]] `NoteEditor` (on mount + while polling).
 
 ### `GET|POST /api/auth/[...all]`
 Better Auth handler — sessions, login, register, OAuth callbacks. See [[configuration#better-auth]].

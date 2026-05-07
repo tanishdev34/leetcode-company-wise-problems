@@ -14,7 +14,7 @@
 | **Auth** | Better Auth (email/password + Google OAuth) | [[configuration#better-auth]], [[components#auth]] |
 | **Search** | PostgreSQL `pg_trgm` extension | [[configuration#search-index]], [[actions#get-apisearchqpage1pagesize20]] |
 | **Caching** | Upstash Redis | [[configuration#environment-variables]] |
-| **AI Analysis** | Cerebras via AI SDK (`@ai-sdk/cerebras`) | [[actions#analyzeCode]] |
+| **AI Analysis** | Cerebras via AI SDK (`@ai-sdk/cerebras`) — queued background jobs via `next/server` `after()` with retry/backoff | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]] |
 | **Package Manager** | Bun | [[configuration#package-scripts]] |
 
 ## Data Flow

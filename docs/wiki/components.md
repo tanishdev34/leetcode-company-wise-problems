@@ -48,7 +48,7 @@ Question Detail (/questions/[id])      [[pages]]
 ├── Topic tags
 ├── Company links                      → [[pages#company-detail-companiesslug]]
 ├── NoteEditor                         [[components#questions]]
-└── Code editor + AI analysis          → [[actions#analyzeCode]]
+└── Code editor + AI analysis          → [[actions#post-apianalyze]] (background job, polled)
 ```
 
 ## Component Reference

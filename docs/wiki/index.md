@@ -16,6 +16,14 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 
 ## Changelog
 
+### [2026-05-07] AI analysis moved to background queue
+- Added [[data-model#analysisjob-ai-analysis-queue]] model — tracks `pending`/`running`/`done`/`error` plus `attempts`/`maxAttempts`.
+- Added `lib/analyze.ts` — `processAnalysisJob(jobId)` worker with exponential backoff (2s, 8s, 30s) up to 3 attempts.
+- Added [[actions#post-apianalyze]] and [[actions#get-apianalyzequestionid]] — enqueue + poll endpoints. Worker is scheduled via `next/server`'s `after()` so it survives the user closing the page.
+- Removed deprecated `analyzeCode` server action from `actions/questions.ts`.
+- Updated [[components#questions]] `NoteEditor` — Generate button now POSTs to `/api/analyze`, polls `/api/analyze` for job status, and resumes polling on remount if a job is still running.
+- Created [[CLAUDE.md]] (mirrors [[AGENTS.md]]).
+
 ### [2026-05-07] Email reminders — daily question + contest alerts
 - Added `emailSubscribed` field to [[data-model#user]] model.
 - Created `actions/email.ts` — [[actions#emailts]] toggle subscription server action.

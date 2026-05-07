@@ -20,7 +20,7 @@ GOOGLE_CLIENT_SECRET="..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
-# AI Analysis — used by [[actions#analyzeCode]] (admin feature)
+# AI Analysis — used by [[actions#post-apianalyze]] (admin feature, background queue)
 CEREBRAS_API_KEY="..."
 
 # SMTP (for email reminders via [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]])

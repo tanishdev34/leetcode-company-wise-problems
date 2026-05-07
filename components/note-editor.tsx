@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { saveNotes, saveCode, saveHints, analyzeCode } from "@/actions/questions";
+import { saveNotes, saveCode, saveHints, getNotes } from "@/actions/questions";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -284,26 +284,139 @@ export function NoteEditor({
     [code, doSaveCode]
   );
 
+  const pollRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastJobIdRef = useRef<string | null>(null);
+  const trackingRef = useRef(false);
+
+  const refreshNotesAndHints = useCallback(async () => {
+    const result = await getNotes(questionId);
+    if (result.success) {
+      setNotes(result.data.notes);
+      setHints(result.data.hints);
+    }
+  }, [questionId]);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearTimeout(pollRef.current);
+      pollRef.current = undefined;
+    }
+  }, []);
+
+  const pollJobRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    pollJobRef.current = async () => {
+    try {
+      const res = await fetch(
+        `/api/analyze?questionId=${encodeURIComponent(questionId)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) {
+        pollRef.current = setTimeout(() => pollJobRef.current(), 5000);
+        return;
+      }
+      const data = (await res.json()) as {
+        job: {
+          id: string;
+          status: "pending" | "running" | "done" | "error";
+          attempts: number;
+          maxAttempts: number;
+          error: string | null;
+        } | null;
+      };
+      const job = data.job;
+
+      if (!job) {
+        setGenerating(false);
+        trackingRef.current = false;
+        return;
+      }
+
+      if (job.status === "pending" || job.status === "running") {
+        setGenerating(true);
+        lastJobIdRef.current = job.id;
+        trackingRef.current = true;
+        pollRef.current = setTimeout(() => pollJobRef.current(), 3000);
+        return;
+      }
+
+      // Terminal state — only react if we were tracking this generation.
+      const wasTracking = trackingRef.current;
+      lastJobIdRef.current = job.id;
+      trackingRef.current = false;
+      setGenerating(false);
+
+      if (!wasTracking) return;
+
+      if (job.status === "done") {
+        await refreshNotesAndHints();
+        setStatus("saved");
+        setTimeout(() => setStatus("idle"), 2000);
+      } else if (job.status === "error") {
+        setStatus("error");
+      }
+    } catch {
+      pollRef.current = setTimeout(() => pollJobRef.current(), 5000);
+    }
+    };
+  });
+
   const handleGenerate = useCallback(async () => {
     if (!code.trim()) return;
     setGenerating(true);
     setStatus("saving");
     try {
-      const result = await analyzeCode(questionId, code, language);
-      if (result.success) {
-        // Server already saved to DB — just update local state
-        setNotes(result.data.notes);
-        setHints(result.data.hints);
-        setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
-      } else {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, code, language }),
+      });
+      if (!res.ok) {
+        setGenerating(false);
         setStatus("error");
+        return;
       }
+      const data = (await res.json()) as { jobId: string; status: string };
+      lastJobIdRef.current = data.jobId;
+      trackingRef.current = true;
+      stopPolling();
+      pollRef.current = setTimeout(() => pollJobRef.current(), 2000);
     } catch {
+      setGenerating(false);
       setStatus("error");
     }
-    setGenerating(false);
-  }, [code, language, questionId]);
+  }, [code, language, questionId, stopPolling]);
+
+  // On mount (and questionId change): check for an in-flight job and resume polling.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/analyze?questionId=${encodeURIComponent(questionId)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          job: { id: string; status: string } | null;
+        };
+        if (!data.job) return;
+        if (data.job.status === "pending" || data.job.status === "running") {
+          lastJobIdRef.current = data.job.id;
+          trackingRef.current = true;
+          setGenerating(true);
+          stopPolling();
+          pollRef.current = setTimeout(() => pollJobRef.current(), 2000);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+      stopPolling();
+    };
+  }, [questionId, stopPolling]);
 
   useEffect(() => {
     return () => {
