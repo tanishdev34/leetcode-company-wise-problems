@@ -8,16 +8,15 @@ const CONTESTS_API = "https://alfa-leetcode-api.onrender.com/contests/upcoming";
 const NOTIFIED_PREFIX = "contest:notified:";
 
 export async function GET(request: Request) {
-  // Accept Vercel's internal cron trigger or manual test with ?secret=
-  const isVercelCron = request.headers.get("x-vercel-cron") === "1";
+  const authHeader = request.headers.get("authorization");
   const { searchParams } = new URL(request.url);
   const secret = searchParams.get("secret");
-  if (
-    !isVercelCron &&
-    process.env.CRON_SECRET &&
-    process.env.CRON_SECRET !== "development" &&
-    secret !== process.env.CRON_SECRET
-  ) {
+  const cronSecret = process.env.CRON_SECRET;
+
+  const isVercelCron = authHeader === `Bearer ${cronSecret}`;
+  const isManualTest = !cronSecret || cronSecret === "development" || secret === cronSecret;
+
+  if (!isVercelCron && !isManualTest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,6 +46,8 @@ export async function GET(request: Request) {
         select: { email: true },
       });
 
+      results.dailyQuestion = question.questionTitle;
+
       if (subscribedUsers.length > 0) {
         const html = dailyQuestionEmailHtml(question);
         let sent = 0;
@@ -59,7 +60,6 @@ export async function GET(request: Request) {
           });
           sent++;
         }
-        results.dailyQuestion = question.questionTitle;
         results.dailySent = sent;
       } else {
         results.dailySent = 0;
