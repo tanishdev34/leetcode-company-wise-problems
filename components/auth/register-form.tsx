@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, signUp } from "@/lib/auth-client";
+import { signUp } from "@/lib/auth-client";
+import { signInWithGoogle } from "@/lib/google-signin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +34,16 @@ export function RegisterForm() {
   async function handleGoogle() {
     setError("");
     setLoading("google");
-    await signIn.social({ provider: "google", callbackURL: "/dashboard" });
-    setLoading("idle");
+    try {
+      const { redirectTo } = await signInWithGoogle("/dashboard");
+      if (redirectTo) {
+        router.push(redirectTo);
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
+      setLoading("idle");
+    }
   }
 
   const isLoading = loading !== "idle";
