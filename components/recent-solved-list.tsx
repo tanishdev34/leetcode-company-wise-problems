@@ -50,25 +50,32 @@ export function RecentSolvedList({
       <div className="space-y-2">
         {submissions.map((sub, i) => {
           const questionId = slugToQuestionId[sub.titleSlug];
-          const titleNode = (
-            <span className="hover:text-primary truncate">{sub.title}</span>
-          );
+          const linkClass =
+            "block truncate hover:text-primary min-w-0 flex-1";
           return (
             <div
               key={i}
               className="flex items-center justify-between gap-2 text-sm"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-green-500 text-xs">✓</span>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-green-500 text-xs shrink-0">✓</span>
                 {questionId ? (
-                  <Link href={`/questions/${questionId}`}>{titleNode}</Link>
+                  <Link
+                    href={`/questions/${questionId}`}
+                    className={linkClass}
+                    title={sub.title}
+                  >
+                    {sub.title}
+                  </Link>
                 ) : (
                   <a
                     href={`https://leetcode.com/problems/${sub.titleSlug}/`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className={linkClass}
+                    title={sub.title}
                   >
-                    {titleNode}
+                    {sub.title}
                   </a>
                 )}
               </div>
@@ -77,7 +84,7 @@ export function RecentSolvedList({
                 <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
                   {LANG_DISPLAY[sub.lang] || sub.lang}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {timeAgo(sub.timestamp)}
                 </span>
               </div>
