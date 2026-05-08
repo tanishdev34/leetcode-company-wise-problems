@@ -13,10 +13,6 @@ export async function getDashboardStats(): Promise<
     totalSolved: number;
     byDifficulty: { EASY: number; MEDIUM: number; HARD: number };
     byCompany: { name: string; slug: string; solved: number; total: number }[];
-    recentActivity: {
-      id: string; title: string; leetcodeUrl: string;
-      difficulty: "EASY" | "MEDIUM" | "HARD"; solvedAt: Date | null;
-    }[];
   }>
 > {
   try {
@@ -61,26 +57,12 @@ export async function getDashboardStats(): Promise<
       .filter((c) => c.total > 0)
       .sort((a, b) => b.solved - a.solved);
 
-    const recentActivity = await prisma.userQuestion.findMany({
-      where: { userId, solved: true },
-      orderBy: { solvedAt: "desc" },
-      take: 10,
-      include: { question: { select: { id: true, title: true, leetcodeUrl: true, difficulty: true } } },
-    });
-
     return {
       success: true,
       data: {
         totalSolved,
         byDifficulty: difficultyCounts,
         byCompany,
-        recentActivity: recentActivity.map((uq) => ({
-          id: uq.question.id,
-          title: uq.question.title,
-          leetcodeUrl: uq.question.leetcodeUrl,
-          difficulty: uq.question.difficulty,
-          solvedAt: uq.solvedAt,
-        })),
       },
     };
   } catch {

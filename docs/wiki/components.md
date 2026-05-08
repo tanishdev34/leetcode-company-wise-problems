@@ -32,9 +32,9 @@ Search (/search)                       [[pages#search-search]]
 
 Dashboard (/dashboard)                 [[pages#dashboard-dashboard]]
 ├── StatsOverview                      [[components#dashboard]]
-├── RecentActivity                     [[components#dashboard]]
 ├── CompanyProgress                    [[components#dashboard]]
 ├── LeetCodeStats                      [[components#dashboard]]
+│   └── RecentSolvedList                [[components#dashboard]]
 ├── SubmissionHeatmap                  [[components#dashboard]]
 ├── SkillBars                          [[components#dashboard]]
 ├── ContestStats                       [[components#dashboard]]
@@ -75,7 +75,7 @@ Question Detail (/questions/[id])      [[pages]]
 | `QuestionDetail` | `question-detail.tsx` | `questionId, isAuthenticated` | Inside `QuestionRow` (expandable) | [[actions#getNotes]] (lazy-loaded) |
 | `NoteEditor` | `note-editor.tsx` | `questionId, initialNotes` | [[pages]], `QuestionDetail` | [[actions#saveNotes]] (debounced auto-save) |
 | `DifficultyBadge` | `difficulty-badge.tsx` | `difficulty: "EASY" \| "MEDIUM" \| "HARD"` | Multiple | Renders [[data-model#enums]] difficulty |
-| `RecentSolvedList` | `recent-solved-list.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
+| `RecentSolvedList` | `recent-solved-list.tsx` | `submissions[], count, slugToQuestionId?` | [[pages#dashboard-dashboard]] (rendered inside `LeetCodeStats`) | LeetCode submissions API; links to local `/questions/{id}` when slug is in `slugToQuestionId`, else falls back to leetcode.com |
 
 ### Search
 | Component | File | Props | Used On | Data Source |
@@ -87,8 +87,7 @@ Question Detail (/questions/[id])      [[pages]]
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `StatsOverview` | `stats-overview.tsx` | `totalSolved, byDifficulty` | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
-| `RecentActivity` | `recent-activity.tsx` | `activity[]` | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
-| `LeetCodeStats` | `leetcode-stats.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-stats]] API |
+| `LeetCodeStats` | `leetcode-stats.tsx` | `username, slugToQuestionId?` | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-stats]] API; passes `slugToQuestionId` down to `RecentSolvedList` so the merged "Recently Solved" view can link to local question pages |
 | `SubmissionHeatmap` | `submission-heatmap.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-calendar]] API |
 | `SkillBars` | `skill-bars.tsx` | — | [[pages#dashboard-dashboard]] | — |
 | `ContestStats` | `contest-stats.tsx` | — | [[pages#dashboard-dashboard]] | — |
@@ -130,6 +129,5 @@ Installed via `shadcn CLI`. Pattern: `import { Button } from "@/components/ui/bu
 | QuestionTable | 10 Skeleton rows | "No questions for this time period" | [[pages#company-detail-companiesslug]] |
 | SearchResults | 5 Skeleton rows | "No results found for '{query}'" | [[pages#search-search]] |
 | Dashboard Stats | Skeleton cards | "Start solving problems to see your progress!" | [[pages#dashboard-dashboard]] |
-| RecentActivity | 5 Skeleton rows | "No recent activity" | [[pages#dashboard-dashboard]] |
 | CompanyProgress | Skeleton bars | "Solve some problems to track your progress" | [[pages#dashboard-dashboard]] |
 | QuestionDetail (unauthenticated) | — | "Sign in to write notes and track progress." | [[pages#company-detail-companiesslug]] |

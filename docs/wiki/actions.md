@@ -77,8 +77,10 @@ Fuzzy search using PostgreSQL `pg_trgm` extension (see [[configuration#search-in
 Sync LeetCode submissions to local solved status.
 - Auth required
 - Body: `{ username: string }`
-- Fetches LeetCode GraphQL API → upserts [[data-model#userquestion-user-progress]] records
-- Called by: [[components#dashboard]] `LeetCodeUsernameForm`
+- Fetches `alfa-leetcode-api`'s `acSubmission` for the user, then upserts [[data-model#userquestion-user-progress]] records as `solved: true` for every submission whose `leetcodeUrl` exists in [[data-model#question]].
+- **Admin-only auto-import**: when the caller is an admin (`user.role === "admin"`), any submitted slug missing from [[data-model#question]] is fetched from `alfa-leetcode-api`'s `/select?titleSlug=<slug>` endpoint and inserted as a new `Question` (no company link, `acceptanceRate: 0`). The newly imported questions are then marked solved alongside the matched ones. Non-admin users get the original "match-only" behavior.
+- Returns: `{ synced, matched, imported }`
+- Called by: [[components#dashboard]] `LeetcodeStats` Sync Solved button
 
 ### `GET /api/leetcode/stats?username=`
 Proxy to LeetCode API. Redis cached (TTL configurable). See [[configuration#environment-variables]].

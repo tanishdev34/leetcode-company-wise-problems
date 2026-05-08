@@ -14,6 +14,7 @@ import { RecentSolvedList } from "./recent-solved-list"
 
 interface LeetcodeStatsProps {
   username: string
+  slugToQuestionId?: Record<string, string>
 }
 
 interface StatsData {
@@ -79,10 +80,13 @@ interface SubmissionsData {
 type SyncStatus =
   | { type: "idle" }
   | { type: "loading" }
-  | { type: "success"; synced: number; matched: number }
+  | { type: "success"; synced: number; matched: number; imported: number }
   | { type: "error"; message: string }
 
-export function LeetcodeStats({ username }: LeetcodeStatsProps) {
+export function LeetcodeStats({
+  username,
+  slugToQuestionId = {},
+}: LeetcodeStatsProps) {
   console.log("[LeetcodeStats] Received username:", username)
   // if (typeof window !== "undefined")
   //   alert("LeetcodeStats rendered! username: " + username)
@@ -113,6 +117,7 @@ export function LeetcodeStats({ username }: LeetcodeStatsProps) {
           type: "success",
           synced: result.synced,
           matched: result.matched,
+          imported: result.imported ?? 0,
         })
         router.refresh()
       } else {
@@ -208,7 +213,11 @@ export function LeetcodeStats({ username }: LeetcodeStatsProps) {
               {syncStatus.synced} question{syncStatus.synced !== 1 ? "s" : ""}{" "}
               marked solved
               <span className="text-muted-foreground">
-                ({syncStatus.matched} LeetCode problems matched)
+                ({syncStatus.matched} LeetCode problems matched
+                {syncStatus.imported > 0
+                  ? `, ${syncStatus.imported} imported`
+                  : ""}
+                )
               </span>
             </span>
           )}
@@ -267,6 +276,7 @@ export function LeetcodeStats({ username }: LeetcodeStatsProps) {
       <RecentSolvedList
         submissions={submissions.submissions}
         count={submissions.count}
+        slugToQuestionId={slugToQuestionId}
       />
     </div>
   )

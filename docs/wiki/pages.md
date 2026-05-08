@@ -20,7 +20,7 @@
 | `/companies/[slug]` | `app/(main)/companies/[slug]/page.tsx` | Public (CSR) | [[components#company]] `TimePeriodTabs`, [[components#question-table]] `QuestionTable` | [[actions#getCompanyQuestions]] |
 | `/search` | `app/(main)/search/page.tsx` | Public (CSR) | [[components#search]] `SearchBar`, [[components#search]] `SearchResults` | [[actions#get-apisearchqpage1pagesize20]] via fetch |
 | `/questions/[id]` | `app/(main)/questions/[id]/page.tsx` | Public (CSR) | [[components#questions]] `NoteEditor`, `DifficultyBadge`, checkbox | [[actions#getQuestionDetail]], [[actions#getNotes]], [[actions#toggleSolved]] |
-| `/dashboard` | `app/(main)/dashboard/page.tsx` | **Auth required** | [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `RecentActivity`, `LeetCodeStats`, `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`, `LeetCodeUsernameForm` | [[actions#getDashboardStats]], [[actions#profilets]] |
+| `/dashboard` | `app/(main)/dashboard/page.tsx` | **Auth required** | [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeStats` (which renders `RecentSolvedList`), `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`, `LeetCodeUsernameForm` | [[actions#getDashboardStats]], [[actions#profilets]] |
 | `/admin/questions` | `app/(main)/admin/questions/page.tsx` | **Auth required** | [[components#admin]] `AdminQuestionsForm` | [[actions#admints]] |
 
 ### API Routes
@@ -82,7 +82,8 @@
 
 ### Dashboard `/dashboard`
 - SSR with auth check: fetches stats via [[actions#getDashboardStats]].
-- Multiple dashboard components: [[components#dashboard]] `StatsOverview`, `RecentActivity`, `CompanyProgress`, `LeetCodeStats`, `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`.
+- Multiple dashboard components: [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeStats` (which renders `RecentSolvedList` — single merged "Recently Solved" view that links to local `/questions/{id}` when the slug exists in the user's question set), `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`.
+- The dashboard server component computes a `slugToQuestionId` map from the user's `Question` rows (slug parsed from `leetcodeUrl`) and passes it through `LeetCodeStats` → `RecentSolvedList` so live LeetCode submissions can deep-link to local question pages.
 - `LeetCodeUsernameForm` for linking LeetCode profile (triggers [[actions#sync]] via POST `/api/sync`).
 
 ### Search `/search`

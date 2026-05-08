@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 
 interface RecentSolvedListProps {
@@ -11,6 +12,7 @@ interface RecentSolvedListProps {
     lang: string;
   }>;
   count: number;
+  slugToQuestionId?: Record<string, string>;
 }
 
 const LANG_DISPLAY: Record<string, string> = {
@@ -29,7 +31,7 @@ const LANG_DISPLAY: Record<string, string> = {
 
 function timeAgo(timestamp: string): string {
   const seconds = Math.floor(Date.now() / 1000 - parseInt(timestamp));
-  
+
   if (seconds < 60) return "just now";
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -37,36 +39,51 @@ function timeAgo(timestamp: string): string {
   return `${Math.floor(seconds / 604800)}w ago`;
 }
 
-export function RecentSolvedList({ submissions, count }: RecentSolvedListProps) {
+export function RecentSolvedList({
+  submissions,
+  slugToQuestionId = {},
+}: RecentSolvedListProps) {
   return (
     <Card className="p-4">
       <h3 className="text-lg font-semibold mb-4">Recently Solved</h3>
-      
+
       <div className="space-y-2">
-        {submissions.map((sub, i) => (
-          <div key={i} className="flex items-center justify-between gap-2 text-sm">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-green-500 text-xs">✓</span>
-              <a
-                href={`https://leetcode.com/problems/${sub.titleSlug}/`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary truncate"
-              >
-                {sub.title}
-              </a>
+        {submissions.map((sub, i) => {
+          const questionId = slugToQuestionId[sub.titleSlug];
+          const titleNode = (
+            <span className="hover:text-primary truncate">{sub.title}</span>
+          );
+          return (
+            <div
+              key={i}
+              className="flex items-center justify-between gap-2 text-sm"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-green-500 text-xs">✓</span>
+                {questionId ? (
+                  <Link href={`/questions/${questionId}`}>{titleNode}</Link>
+                ) : (
+                  <a
+                    href={`https://leetcode.com/problems/${sub.titleSlug}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {titleNode}
+                  </a>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                  {LANG_DISPLAY[sub.lang] || sub.lang}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {timeAgo(sub.timestamp)}
+                </span>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                {LANG_DISPLAY[sub.lang] || sub.lang}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {timeAgo(sub.timestamp)}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
   );
