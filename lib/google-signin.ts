@@ -51,9 +51,13 @@ export async function signInWithGoogle(callbackURL = "/dashboard") {
       credentials: "include",
     });
     if (!res.ok) throw new Error(`Sign-in failed: ${await res.text()}`);
-    return { redirectTo: callbackURL };
+    // Hard navigation so useSession() and server components both re-read the
+    // freshly-set cookie. router.push + router.refresh leaves useSession's
+    // client cache stale.
+    window.location.href = callbackURL;
+    return { redirectTo: callbackURL, hardReload: true };
   }
 
   await signIn.social({ provider: "google", callbackURL });
-  return { redirectTo: null };
+  return { redirectTo: null, hardReload: false };
 }

@@ -34,7 +34,8 @@ export function LoginForm() {
     setError("");
     setLoading("google");
     try {
-      const { redirectTo } = await signInWithGoogle("/dashboard");
+      const { redirectTo, hardReload } = await signInWithGoogle("/dashboard");
+      if (hardReload) return; // window.location.href already triggered
       if (redirectTo) {
         router.push(redirectTo);
         router.refresh();

@@ -35,7 +35,8 @@ export function RegisterForm() {
     setError("");
     setLoading("google");
     try {
-      const { redirectTo } = await signInWithGoogle("/dashboard");
+      const { redirectTo, hardReload } = await signInWithGoogle("/dashboard");
+      if (hardReload) return;
       if (redirectTo) {
         router.push(redirectTo);
         router.refresh();

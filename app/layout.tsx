@@ -3,6 +3,7 @@ import Script from "next/script"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { MobilePullToRefresh } from "@/components/mobile-pull-to-refresh"
 import { cn } from "@/lib/utils";
 
 const fontSans = Geist({
@@ -25,7 +26,10 @@ export default function RootLayout({
     >
       <body>
         <Script defer src="https://cloud.umami.is/script.js" data-website-id="65dc31c1-8efa-49ce-b7a1-46d7ccee5d33" />
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <MobilePullToRefresh />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
