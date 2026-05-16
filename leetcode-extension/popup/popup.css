@@ -1,0 +1,107 @@
+body {
+  width: 320px;
+  margin: 0;
+  padding: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #fff;
+  color: #1f2937;
+}
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #3b82f6;
+  color: white;
+  transition: background 0.15s;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+button.secondary {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+button.secondary:hover {
+  background: #f3f4f6;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 12px;
+  margin: 0;
+  min-height: 16px;
+}
+
+.user-email {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+.today-count {
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+#register-link {
+  color: #3b82f6;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+#register-link:hover {
+  text-decoration: underline;
+}
