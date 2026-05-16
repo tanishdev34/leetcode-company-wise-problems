@@ -6,30 +6,40 @@
 
 A Chrome/Edge Manifest V3 extension that allows adding LeetCode questions and solutions directly from LeetCode.com into the tracker.
 
-**Directory:** `leetcode-extension/`
+**Directory:** `leetcode-extension/` (built with [WXT](https://wxt.dev) + React + Tailwind CSS)
 
 ## Structure
 
 ```
 leetcode-extension/
-├── manifest.json          # Extension manifest
-├── config.js              # App URL configuration
-├── icons/                 # Extension icons (16/48/128)
-├── popup/
-│   ├── popup.html         # Auth popup HTML
-│   ├── popup.css          # Popup styles
-│   └── popup.js           # Popup logic (auth UI)
-├── content/
-│   └── content.js         # Injected button + data extraction
-└── background/
-    └── background.js      # API client, auth, GraphQL queries
+├── wxt.config.ts           # WXT configuration (host_permissions, etc.)
+├── package.json
+├── entrypoints/
+│   ├── background.ts       # Background service worker (auth, GraphQL, API)
+│   ├── content.ts          # Content script (button injection, data extraction)
+│   └── popup/
+│       ├── index.html      # Popup entry HTML
+│       ├── App.tsx         # React popup component (auth UI)
+│       ├── main.tsx        # React mount point
+│       ├── style.css       # Tailwind CSS v4 imports
+│       └── App.css
+├── lib/
+│   └── types.ts            # Shared TypeScript types
+├── public/
+│   └── icon/               # Extension icons (16/32/48/96/128)
+└── .output/                # Built output (gitignored)
 ```
 
 ## Setup
 
-1. Edit `config.js` and set `APP_URL` to your deployed app URL (or `http://localhost:3000` for development)
-2. Open Chrome → Extensions → Enable Developer mode → Load unpacked → select `leetcode-extension/`
-3. Log in via the extension popup (email/password or Google OAuth)
+```bash
+cd leetcode-extension
+npm install
+npm run dev        # watch mode with HMR
+npm run build      # production build → .output/chrome-mv3/
+```
+
+Then load `leetcode-extension/.output/chrome-mv3/` in Chrome as an unpacked extension.
 
 ## Usage
 
