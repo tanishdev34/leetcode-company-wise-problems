@@ -32,15 +32,28 @@ Search (/search)                       [[pages#search-search]]
 
 Dashboard (/dashboard)                 [[pages#dashboard-dashboard]]
 ├── StatsOverview                      [[components#dashboard]]
-├── CompanyProgress                    [[components#dashboard]]
-├── LeetCodeStats                      [[components#dashboard]]
-│   └── RecentSolvedList                [[components#dashboard]]
-├── SubmissionHeatmap                  [[components#dashboard]]
-├── SkillBars                          [[components#dashboard]]
-├── ContestStats                       [[components#dashboard]]
-├── SolvedProgress                     [[components#dashboard]]
-├── DailyProblemCard                   [[components#dashboard]]
-└── LeetCodeUsernameForm               [[components#dashboard]]
+├── Quick links (to /stats, /codeforces) [[components#dashboard]]
+├── Linked Accounts
+│   ├── LeetCodeUsernameForm            [[components#dashboard]]
+│   ├── CodeforcesUsernameForm          [[components#codeforces]]
+│   └── EmailSubscriptionToggle         [[components#dashboard]]
+└── CompanyProgress                    [[components#dashboard]]
+
+Stats (/stats)                         [[pages#stats-leetcode-stats]]
+├── LeetcodeUsernameForm               [[components#dashboard]]
+└── LeetcodeStats                      [[components#dashboard]]
+    ├── SolvedProgress                 [[components#dashboard]]
+    ├── ContestStats                   [[components#dashboard]]
+    ├── SubmissionHeatmap              [[components#dashboard]]
+    ├── SkillBars                      [[components#dashboard]]
+    └── RecentSolvedList               [[components#dashboard]]
+
+Codeforces (/codeforces)               [[pages#codeforces-codeforces]]
+├── CodeforcesUsernameForm             [[components#codeforces]]
+└── CodeforcesProfile                  [[components#codeforces]]
+    ├── CodeforcesUserCard             [[components#codeforces]]
+    ├── RatingHistoryChart             [[components#codeforces]]
+    └── ContestHistoryTable            [[components#codeforces]]
 
 Question Detail (/questions/[id])      [[pages]]
 ├── Checkbox                           → [[actions#toggleSolved]]
@@ -87,14 +100,23 @@ Question Detail (/questions/[id])      [[pages]]
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `StatsOverview` | `stats-overview.tsx` | `totalSolved, byDifficulty` | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
-| `LeetCodeStats` | `leetcode-stats.tsx` | `username, slugToQuestionId?` | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-stats]] API; passes `slugToQuestionId` down to `RecentSolvedList` so the merged "Recently Solved" view can link to local question pages |
-| `SubmissionHeatmap` | `submission-heatmap.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-calendar]] API |
-| `SkillBars` | `skill-bars.tsx` | — | [[pages#dashboard-dashboard]] | — |
-| `ContestStats` | `contest-stats.tsx` | — | [[pages#dashboard-dashboard]] | — |
-| `SolvedProgress` | `solved-progress.tsx` | — | [[pages#dashboard-dashboard]] | — |
-| `DailyProblemCard` | `daily-problem-card.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#get-leetcode-daily]] API |
-| `LeetCodeUsernameForm` | `leetcode-username-form.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#profilets]], [[actions#sync]] |
+| `LeetCodeStats` | `leetcode-stats.tsx` | `username, slugToQuestionId?` | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-stats]] API; passes `slugToQuestionId` down to `RecentSolvedList` so the merged "Recently Solved" view can link to local question pages |
+| `SubmissionHeatmap` | `submission-heatmap.tsx` | — | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-calendar]] API |
+| `SkillBars` | `skill-bars.tsx` | — | [[pages#stats-leetcode-stats]] | — |
+| `ContestStats` | `contest-stats.tsx` | — | [[pages#stats-leetcode-stats]] | — |
+| `SolvedProgress` | `solved-progress.tsx` | — | [[pages#stats-leetcode-stats]] | — |
+| `DailyProblemCard` | `daily-problem-card.tsx` | — | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-daily]] API |
+| `LeetCodeUsernameForm` | `leetcode-username-form.tsx` | — | [[pages#dashboard-dashboard]], [[pages#stats-leetcode-stats]] | [[actions#profilets]], [[actions#sync]] |
 | `EmailSubscriptionToggle` | `email-subscription-toggle.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#emailts]] |
+
+### Codeforces
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `CodeforcesUserCard` | `codeforces-user-card.tsx` | `handle, rating?, maxRating?, rank?, maxRank?, avatar?, titlePhoto?, contribution, lastOnlineTimeSeconds?, registrationTimeSeconds?` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesuserhandle]] API |
+| `RatingHistoryChart` | `rating-history-chart.tsx` | `data: { contestName, rating, date, rank }[]` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesratinghandle]] API; Recharts `LineChart` with CF rank tier reference lines |
+| `ContestHistoryTable` | `contest-history-table.tsx` | `entries: ContestEntry[]` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesratinghandle]] API; shows contest name, rank, old/new rating, delta, date |
+| `CodeforcesProfile` | `codeforces-profile.tsx` | `handle: string` | [[pages#codeforces-codeforces]] | Fetches both `/api/codeforces/user` and `/api/codeforces/rating`; renders `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable` |
+| `CodeforcesUsernameForm` | `codeforces-username-form.tsx` | `initialValue?: string` | [[pages#dashboard-dashboard]], [[pages#codeforces-codeforces]] | [[actions#codeforcests]] `saveCodeforcesUsername` |
 
 ### Auth
 | Component | File | Props | Used On | Data Source |
@@ -131,3 +153,6 @@ Installed via `shadcn CLI`. Pattern: `import { Button } from "@/components/ui/bu
 | Dashboard Stats | Skeleton cards | "Start solving problems to see your progress!" | [[pages#dashboard-dashboard]] |
 | CompanyProgress | Skeleton bars | "Solve some problems to track your progress" | [[pages#dashboard-dashboard]] |
 | QuestionDetail (unauthenticated) | — | "Sign in to write notes and track progress." | [[pages#company-detail-companiesslug]] |
+| CodeforcesProfile | 3 Skeleton cards | "Link your Codeforces account to view your stats" / error card with Retry button | [[pages#codeforces-codeforces]] |
+| RatingHistoryChart | Empty card "No contest history available" | Empty card "No contest history available" | [[pages#codeforces-codeforces]] |
+| ContestHistoryTable | Empty card "No contest history available" | Empty card "No contest history available" | [[pages#codeforces-codeforces]] |

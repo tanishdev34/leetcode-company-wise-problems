@@ -27,6 +27,7 @@ Each relation:
 | `image` | String? | Avatar URL |
 | `role` | String | `"user"` or `"admin"` — checked by [[actions#post-apianalyze]] |
 | `leetcodeUsername` | String? | Linked LeetCode handle — set via [[actions#profilets]] `saveLeetcodeUsername` |
+| `codeforcesUsername` | String? | Linked Codeforces handle — set via [[actions#codeforcests]] `saveCodeforcesUsername` |
 | `emailSubscribed` | Boolean | Default `false` — toggled via [[actions#emailts]] `toggleEmailSubscription`, used by [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]] |
 | `emailVerified` | Boolean | Default `false` |
 

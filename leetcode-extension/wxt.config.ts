@@ -7,9 +7,6 @@ export default defineConfig({
   vite: () => ({
     plugins: [tailwindcss()],
   }),
-  runner: {
-    startUrls: ['http://localhost:3000'],
-  },
   manifest: {
     name: 'LC Tracker',
     description: 'Add LeetCode questions and solutions to your tracker.',

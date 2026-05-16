@@ -8,14 +8,28 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 |------|---------|-------------|
 | [[architecture]] | Tech stack, data flow, design decisions | [[data-model]], [[actions]], [[configuration]], [[conventions]] |
 | [[data-model]] | Prisma schema — User, Question, Company, CompanyQuestion, UserQuestion | [[architecture]], [[actions]], [[components]], [[configuration]] |
-| [[pages]] | All routes, URL params, auth guards | [[components]], [[actions]], [[architecture]], [[configuration]] |
-| [[components]] | UI component tree, props, states | [[pages]], [[actions]], [[conventions]], [[architecture]] |
-| [[actions]] | Server actions, API routes, data flow | [[data-model]], [[pages]], [[components]], [[conventions]] |
+| [[pages]] | All routes, URL params, auth guards, Codeforces & Stats pages | [[components]], [[actions]], [[architecture]], [[configuration]] |
+| [[components]] | UI component tree, props, states (including Codeforces components) | [[pages]], [[actions]], [[conventions]], [[architecture]] |
+| [[actions]] | Server actions, API routes, data flow (including Codeforces APIs) | [[data-model]], [[pages]], [[components]], [[conventions]] |
 | [[configuration]] | Environment variables, config files | [[architecture]], [[data-model]], [[pages]], [[actions]] |
 | [[conventions]] | Coding style, naming, patterns | [[actions]], [[components]], [[architecture]] |
-| [[extension]] | Browser extension — Chrome/Edge Manifest V3, data extraction, setup | [[actions#post-apiextensionadd-solution]], [[data-model]] |
+| [[extension]] | Browser extension — Chrome/Edge Manifest V3, data extraction, setup, LC stats | [[actions#post-apiextensionadd-solution]], [[data-model]] |
 
 ## Changelog
+
+### [2026-05-16] Codeforces integration, full stats page, dashboard reorg, extension enhancement
+- Added [[data-model#user]] `codeforcesUsername` field — linked via [[actions#codeforcests]] `saveCodeforcesUsername`.
+- Created `actions/codeforces.ts` — [[actions#codeforcests]] server action to save Codeforces handle.
+- Created [[pages#codeforces-codeforces]] — Codeforces profile page with rating card, rating history chart, contest history table.
+- Created [[pages#stats-leetcode-stats]] — LeetCode full stats page (solved progress, contest stats, heatmap, skills, recents).
+- Created [[actions#get-apicodeforcesuserhandle]] and [[actions#get-apicodeforcesratinghandle]] — proxy to Codeforces API, Redis cached.
+- Created [[actions#get-apiuserprofile]] — returns current user's profile (email, linked usernames).
+- Created Codeforces components: [[components#codeforces]] `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable`, `CodeforcesProfile`, `CodeforcesUsernameForm`.
+- Reorganized [[pages#dashboard-dashboard]] — removed bulky LeetCodeStats components, added quick links to [[pages#stats-leetcode-stats]] and [[pages#codeforces-codeforces]], added [[components#codeforces]] `CodeforcesUsernameForm` in Linked Accounts section.
+- Updated [[components#layout]] `Navbar` — added "Stats" and "Codeforces" desktop + mobile nav links.
+- Updated [[middleware]] — `/stats` and `/codeforces` added to protected routes and matcher.
+- Enhanced [[extension]] — popup now shows LeetCode stats (easy/medium/hard), motivation quotes, animated counters (`AnimatedCounter`), `fadeSlideIn` entry animation. Background worker handles `GET_USER_PROFILE` and `GET_LEETCODE_STATS` messages.
+- Updated {{AGENTS.md}} project structure.
 
 ### [2026-05-16] Browser extension
 - Created `leetcode-extension/` — Chrome/Edge Manifest V3 extension for adding LeetCode questions and solutions directly from LeetCode.com.

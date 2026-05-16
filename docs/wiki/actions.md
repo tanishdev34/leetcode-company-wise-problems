@@ -44,6 +44,12 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 |--------|------|--------|---------|-----------|---------|
 | `saveLeetcodeUsername(username)` | Yes | `username: string` | `{ success: true }` | [[components#dashboard]] `LeetCodeUsernameForm` | Yes — updates [[data-model#user]] |
 
+### `actions/codeforces.ts` — [[data-model#user]]
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `saveCodeforcesUsername(username)` | Yes | `username: string` | `{ success: true }` | [[components#codeforces]] `CodeforcesUsernameForm` on [[pages#dashboard-dashboard]] and [[pages#codeforces-codeforces]] | Yes — updates [[data-model#user]] `codeforcesUsername` |
+
 ### `actions/email.ts` — [[data-model#user]]
 
 | Action | Auth | Params | Returns | Called By | Mutates |
@@ -100,6 +106,22 @@ Fetches daily LeetCode problem.
 ### `GET /api/leetcode/submissions`
 Fetches user submissions from LeetCode.
 - Returns: recent submissions
+
+### `GET /api/codeforces/user?handle=`
+Proxy to Codeforces API `user.info`. Redis cached (CACHE_TTL.STATS).
+- Returns: `{ handle, rating, maxRating, rank, maxRank, avatar, titlePhoto, contribution, lastOnlineTimeSeconds, registrationTimeSeconds }`
+- Called by: [[components#codeforces]] `CodeforcesProfile`
+
+### `GET /api/codeforces/rating?handle=`
+Proxy to Codeforces API `user.rating`. Redis cached (CACHE_TTL.STATS).
+- Returns: `{ ratingHistory: [{ contestId, contestName, rank, oldRating, newRating, ratingUpdateTimeSeconds }] }`
+- Called by: [[components#codeforces]] `CodeforcesProfile`
+
+### `GET /api/user/profile`
+Returns current user's profile data. Auth required.
+- Returns: `{ email, leetcodeUsername, codeforcesUsername }`
+- Returns 401 if not authenticated.
+- Called by: [[extension]] background worker (`GET_USER_PROFILE` handler)
 
 ### `POST /api/analyze`
 Enqueues an AI analysis job (admin only) and returns immediately.

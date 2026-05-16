@@ -20,7 +20,9 @@
 | `/companies/[slug]` | `app/(main)/companies/[slug]/page.tsx` | Public (CSR) | [[components#company]] `TimePeriodTabs`, [[components#question-table]] `QuestionTable` | [[actions#getCompanyQuestions]] |
 | `/search` | `app/(main)/search/page.tsx` | Public (CSR) | [[components#search]] `SearchBar`, [[components#search]] `SearchResults` | [[actions#get-apisearchqpage1pagesize20]] via fetch |
 | `/questions/[id]` | `app/(main)/questions/[id]/page.tsx` | Public (CSR) | [[components#questions]] `NoteEditor`, `DifficultyBadge`, checkbox | [[actions#getQuestionDetail]], [[actions#getNotes]], [[actions#toggleSolved]] |
-| `/dashboard` | `app/(main)/dashboard/page.tsx` | **Auth required** | [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeStats` (which renders `RecentSolvedList`), `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`, `LeetCodeUsernameForm` | [[actions#getDashboardStats]], [[actions#profilets]] |
+| `/dashboard` | `app/(main)/dashboard/page.tsx` | **Auth required** | [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeUsernameForm`, `CodeforcesUsernameForm`, `EmailSubscriptionToggle`, quick links to [[pages#stats-leetcode-stats]] and [[pages#codeforces-codeforces]] | [[actions#getDashboardStats]], [[actions#profilets]], [[actions#codeforcests]] |
+| `/stats` | `app/(main)/stats/page.tsx` | **Auth required** | [[components#dashboard]] `LeetcodeUsernameForm`, `LeetcodeStats` (solved progress, contest stats, heatmap, skills, recents) | [[actions#get-leetcode-stats]] API, [[actions#get-leetcode-calendar]] API |
+| `/codeforces` | `app/(main)/codeforces/page.tsx` | **Auth required** | [[components#codeforces]] `CodeforcesUsernameForm`, `CodeforcesProfile` (which renders `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable`) | [[actions#codeforcests]], [[actions#get-apicodeforcesuserhandle]], [[actions#get-apicodeforcesratinghandle]] |
 | `/admin/questions` | `app/(main)/admin/questions/page.tsx` | **Auth required** | [[components#admin]] `AdminQuestionsForm` | [[actions#admints]] |
 
 ### API Routes
@@ -33,6 +35,9 @@
 | `GET /api/leetcode/calendar?username=` | `app/api/leetcode/calendar/route.ts` | Public | [[components#dashboard]] `SubmissionHeatmap` | LeetCode calendar (Redis cached) |
 | `GET /api/leetcode/daily` | `app/api/leetcode/daily/route.ts` | Public | [[components#dashboard]] `DailyProblemCard` | Daily LeetCode problem |
 | `GET /api/leetcode/submissions` | `app/api/leetcode/submissions/route.ts` | Public | — | LeetCode submissions |
+| `GET /api/codeforces/user?handle=` | `app/api/codeforces/user/route.ts` | Public | [[components#codeforces]] `CodeforcesProfile` | Codeforces user info (Redis cached) |
+| `GET /api/codeforces/rating?handle=` | `app/api/codeforces/rating/route.ts` | Public | [[components#codeforces]] `CodeforcesProfile` | Codeforces rating history (Redis cached) |
+| `GET /api/user/profile` | `app/api/user/profile/route.ts` | **Auth required** | [[extension]] background worker | Returns current user's email, leetcodeUsername, codeforcesUsername |
 | `GET /api/cron/daily-question` | `app/api/cron/daily-question/route.ts` | Cron secret | [[actions#daily-question-cron]] | Send daily LeetCode question emails |
 | `GET /api/cron/contest-reminder` | `app/api/cron/contest-reminder/route.ts` | Cron secret | [[actions#contest-reminder-cron]] | Send contest reminder emails |
 | `GET/POST /api/auth/[...all]` | `app/api/auth/[...all]/route.ts` | — | [[components#auth]] `LoginForm`, `RegisterForm` | Better Auth handler |
@@ -58,7 +63,7 @@
 
 ## Route Protection
 
-- **Middleware** (`middleware.ts`) protects `/dashboard` by checking for Better Auth session cookie. See [[configuration#config-files]].
+- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, and `/codeforces` by checking for Better Auth session cookie. See [[configuration#config-files]].
 - **Server components** (e.g., dashboard page) call `auth.api.getSession()` server-side and redirect if not authenticated.
 - **Server actions** call `auth.api.getSession()` and return `{ success: false, error: "Not authenticated" }`. See [[conventions#server-action-pattern]].
 - **Public routes** work without auth; solved status/notes are simply not shown.
@@ -82,9 +87,20 @@
 
 ### Dashboard `/dashboard`
 - SSR with auth check: fetches stats via [[actions#getDashboardStats]].
-- Multiple dashboard components: [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeStats` (which renders `RecentSolvedList` — single merged "Recently Solved" view that links to local `/questions/{id}` when the slug exists in the user's question set), `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`.
-- The dashboard server component computes a `slugToQuestionId` map from the user's `Question` rows (slug parsed from `leetcodeUrl`) and passes it through `LeetCodeStats` → `RecentSolvedList` so live LeetCode submissions can deep-link to local question pages.
+- Lean layout: shows `StatsOverview`, quick link buttons to [[pages#stats-leetcode-stats]] and [[pages#codeforces-codeforces]], Linked Accounts section ([[components#dashboard]] `LeetCodeUsernameForm` + [[components#codeforces]] `CodeforcesUsernameForm` + `EmailSubscriptionToggle`), and `CompanyProgress`.
+- The heavy stats components (`LeetCodeStats`, `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`) have been moved off the dashboard to dedicated [[pages#stats-leetcode-stats]] page for a faster, cleaner dashboard experience.
 - `LeetCodeUsernameForm` for linking LeetCode profile (triggers [[actions#sync]] via POST `/api/sync`).
+- `CodeforcesUsernameForm` for linking Codeforces handle (calls [[actions#codeforcests]] `saveCodeforcesUsername`).
+
+### Stats `/stats`
+- Auth required. Shows LeetCode username form or full LeetCode stats.
+- Fetches data from [[actions#get-leetcode-stats]] and [[actions#get-leetcode-calendar]] APIs.
+- Computes `slugToQuestionId` map from user's question set so the `RecentSolvedList` can deep-link to local question pages.
+
+### Codeforces `/codeforces`
+- Auth required. Shows Codeforces username form or profile.
+- Profile includes: [[components#codeforces]] `CodeforcesUserCard` (avatar, handle, rating, rank, contribution), `RatingHistoryChart` (Recharts line chart with rank tier reference lines), and `ContestHistoryTable` (contest name, rank, rating changes, date).
+- Data proxied through [[actions#get-apicodeforcesuserhandle]] and [[actions#get-apicodeforcesratinghandle]] (Redis cached).
 
 ### Search `/search`
 - CSR with debounced search input (300ms).
