@@ -101,8 +101,19 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // 4. If code provided, save it as solved
+    // 4. If code provided, save/update the solution
     if (code) {
+      // Check if already exists and is already solved — preserve solvedAt if so
+      const existing = await prisma.userQuestion.findUnique({
+        where: {
+          userId_questionId: {
+            userId: session.user.id,
+            questionId: question.id,
+          },
+        },
+        select: { solved: true, solvedAt: true },
+      })
+
       await prisma.userQuestion.upsert({
         where: {
           userId_questionId: {
@@ -114,7 +125,8 @@ export async function POST(req: NextRequest) {
           code,
           language: language || "cpp",
           solved: true,
-          solvedAt: new Date(),
+          // Only overwrite solvedAt if it wasn't already solved
+          solvedAt: existing?.solved ? existing.solvedAt : new Date(),
         },
         create: {
           userId: session.user.id,
