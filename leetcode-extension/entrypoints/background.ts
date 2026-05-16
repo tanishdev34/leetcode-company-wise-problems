@@ -18,6 +18,9 @@ async function login(email: string, password: string) {
       credentials: 'include',
       body: JSON.stringify({ email, password }),
     })
+    if (!res.headers.get('content-type')?.includes('json')) {
+      return { success: false as const, error: `Server returned ${res.status} — check APP_URL` }
+    }
     const data = await res.json()
     if (data.user || res.ok) {
       userEmail = email
@@ -98,7 +101,12 @@ async function fetchQuestionMetadata(titleSlug: string): Promise<QuestionMeta> {
     return data.data.question
   }
 
-  if (!res.ok) throw new Error(`LeetCode API error: ${res.status}`)
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`LeetCode API error (${res.status}${text ? ': ' + text.slice(0, 80) : ''})`)
+  }
+  const ct = res.headers.get('content-type') || ''
+  if (!ct.includes('json')) throw new Error('LeetCode returned non-JSON response')
   const data = await res.json()
   if (data.errors) throw new Error(data.errors[0]?.message || 'GraphQL error')
   return data.data.question
@@ -128,6 +136,11 @@ async function addSolution({ titleSlug, code, language }: {
     }),
   })
 
+  const ct = res.headers.get('content-type') || ''
+  if (!ct.includes('json')) {
+    const body = await res.text()
+    throw new Error(`Server returned ${res.status} — did you deploy the latest app?`)
+  }
   const data = await res.json()
   if (!data.success) throw new Error(data.error || 'Failed to add solution')
   return data.data as { questionId: string }
