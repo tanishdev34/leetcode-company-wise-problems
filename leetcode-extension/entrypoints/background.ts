@@ -146,6 +146,32 @@ async function addSolution({ titleSlug, code, language }: {
   return data.data as { questionId: string }
 }
 
+// ─── User Profile ───────────────────────────────────
+
+async function getUserProfile() {
+  try {
+    const res = await fetch(`${APP_URL}/api/user/profile`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      return { success: true as const, ...data }
+    }
+  } catch { /* ignore */ }
+  return { success: false as const }
+}
+
+// ─── LeetCode Stats ─────────────────────────────────
+
+async function getLeetcodeStats(username: string) {
+  try {
+    const res = await fetch(`${APP_URL}/api/leetcode/stats?username=${username}`)
+    if (res.ok) {
+      const data = await res.json()
+      return { success: true as const, stats: data }
+    }
+  } catch { /* ignore */ }
+  return { success: false as const }
+}
+
 // ─── Today's Count ─────────────────────────────────
 
 async function getTodayCount() {
@@ -186,6 +212,12 @@ export default defineBackground(() => {
             break
           case 'GET_TODAY_COUNT':
             sendResponse(await getTodayCount())
+            break
+          case 'GET_USER_PROFILE':
+            sendResponse(await getUserProfile())
+            break
+          case 'GET_LEETCODE_STATS':
+            sendResponse(await getLeetcodeStats(message.username))
             break
           default:
             sendResponse({ success: false, error: 'Unknown action' })

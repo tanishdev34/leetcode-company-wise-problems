@@ -1,6 +1,48 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 
 type ViewState = 'loading' | 'auth' | 'main'
+
+const QUOTES = [
+  { text: "The only way to learn a new programming language is by writing programs in it.", author: "Dennis Ritchie" },
+  { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+  { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+  { text: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.", author: "Martin Fowler" },
+  { text: "Talk is cheap. Show me the code.", author: "Linus Torvalds" },
+  { text: "Programs must be written for people to read, and only incidentally for machines to execute.", author: "Harold Abelson" },
+  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
+  { text: "It's not a bug — it's an undocumented feature.", author: "Unknown" },
+  { text: "Simplicity is the soul of efficiency.", author: "Austin Freeman" },
+  { text: "Make it work, make it right, make it fast.", author: "Kent Beck" },
+  { text: "Debugging is twice as hard as writing the code in the first place.", author: "Brian Kernighan" },
+  { text: "The function of good software is to make the complex appear to be simple.", author: "Grady Booch" },
+  { text: "Before software can be reusable it first has to be usable.", author: "Ralph Johnson" },
+  { text: "Optimism is an occupational hazard of programming.", author: "Alan Perlis" },
+  { text: "In theory, there is no difference between theory and practice. But in practice, there is.", author: "Jan L. A. van de Snepscheut" },
+]
+
+function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    if (value === 0) { setDisplay(0); return }
+    const duration = 600
+    const steps = 20
+    const increment = value / steps
+    let current = 0
+    const timer = setInterval(() => {
+      current += increment
+      if (current >= value) {
+        setDisplay(value)
+        clearInterval(timer)
+      } else {
+        setDisplay(Math.floor(current))
+      }
+    }, duration / steps)
+    return () => clearInterval(timer)
+  }, [value])
+
+  return <>{display}{suffix}</>
+}
 
 function App() {
   const [view, setView] = useState<ViewState>('loading')
@@ -10,6 +52,11 @@ function App() {
   const [todayCount, setTodayCount] = useState(0)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [leetcodeUsername, setLeetcodeUsername] = useState<string | null>(null)
+  const [lcStats, setLcStats] = useState<{ easy: number; medium: number; hard: number } | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  const quote = useMemo(() => QUOTES[Math.floor(Math.random() * QUOTES.length)], [])
 
   // ─── Check auth on mount ──────────────────────────
 
@@ -21,11 +68,35 @@ function App() {
         const c = await browser.runtime.sendMessage({ action: 'GET_TODAY_COUNT' })
         setTodayCount(c.count || 0)
         setView('main')
+
+        // Fetch user profile to get leetcodeUsername
+        const profile = await browser.runtime.sendMessage({ action: 'GET_USER_PROFILE' })
+        if (profile.success && profile.leetcodeUsername) {
+          setLeetcodeUsername(profile.leetcodeUsername)
+        }
       } else {
         setView('auth')
       }
     })()
   }, [])
+
+  // ─── Fetch LeetCode stats when username is available ──
+
+  useEffect(() => {
+    if (!leetcodeUsername) return
+    ;(async () => {
+      setStatsLoading(true)
+      const res = await browser.runtime.sendMessage({ action: 'GET_LEETCODE_STATS', username: leetcodeUsername })
+      if (res.success && res.stats) {
+        setLcStats({
+          easy: res.stats.easy ?? 0,
+          medium: res.stats.medium ?? 0,
+          hard: res.stats.hard ?? 0,
+        })
+      }
+      setStatsLoading(false)
+    })()
+  }, [leetcodeUsername])
 
   // ─── Email login ──────────────────────────────────
 
@@ -42,6 +113,11 @@ function App() {
       const c = await browser.runtime.sendMessage({ action: 'GET_TODAY_COUNT' })
       setTodayCount(c.count || 0)
       setView('main')
+
+      const profile = await browser.runtime.sendMessage({ action: 'GET_USER_PROFILE' })
+      if (profile.success && profile.leetcodeUsername) {
+        setLeetcodeUsername(profile.leetcodeUsername)
+      }
     } else {
       setError(res.error || 'Login failed')
     }
@@ -67,6 +143,11 @@ function App() {
         const c = await browser.runtime.sendMessage({ action: 'GET_TODAY_COUNT' })
         setTodayCount(c.count || 0)
         setView('main')
+
+        const profile = await browser.runtime.sendMessage({ action: 'GET_USER_PROFILE' })
+        if (profile.success && profile.leetcodeUsername) {
+          setLeetcodeUsername(profile.leetcodeUsername)
+        }
         setBusy(false)
       } else if (attempts >= 60) {
         clearInterval(poll)
@@ -83,6 +164,8 @@ function App() {
     setView('auth')
     setUserEmail('')
     setTodayCount(0)
+    setLeetcodeUsername(null)
+    setLcStats(null)
   }, [])
 
   // ─── Register ─────────────────────────────────────
@@ -172,16 +255,71 @@ function App() {
     )
   }
 
-  // Main (authenticated) view
+  // ─── Main (authenticated) view ─────────────────────
+
+  const totalLcSolved = lcStats ? lcStats.easy + lcStats.medium + lcStats.hard : 0
+
   return (
     <div className="p-5 flex flex-col gap-4 animate-[fadeSlideIn_0.2s_ease-out]">
       {brand}
-      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col gap-2">
+
+      {/* User Info Card */}
+      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 flex flex-col gap-3 transition-all hover:border-gray-200">
         <p className="text-sm font-medium text-gray-900 break-all">{userEmail}</p>
-        <p className="text-xs text-gray-400 font-medium">
-          {todayCount} question{todayCount !== 1 ? 's' : ''} added today
-        </p>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold text-gray-900 tabular-nums">
+            <AnimatedCounter value={todayCount} />
+          </span>
+          <span className="text-xs text-gray-400 font-medium">
+            question{todayCount !== 1 ? 's' : ''} added today
+          </span>
+        </div>
       </div>
+
+      {/* LeetCode Stats Card */}
+      {leetcodeUsername && (
+        <div className="border border-gray-100 rounded-2xl p-4 flex flex-col gap-3 transition-all hover:border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">LeetCode Stats</span>
+            <span className="text-xs text-gray-400">{leetcodeUsername}</span>
+          </div>
+          {statsLoading ? (
+            <div className="flex items-center justify-center py-3">
+              <div className="w-4 h-4 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+            </div>
+          ) : lcStats ? (
+            <>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold text-gray-900 tabular-nums">
+                  <AnimatedCounter value={totalLcSolved} />
+                </span>
+                <span className="text-xs text-gray-400 font-medium">total solved</span>
+              </div>
+              <div className="flex gap-3 text-xs font-medium">
+                <span className="text-emerald-600 tabular-nums">
+                  <AnimatedCounter value={lcStats.easy} /> <span className="text-emerald-500/70 font-normal">easy</span>
+                </span>
+                <span className="text-amber-600 tabular-nums">
+                  <AnimatedCounter value={lcStats.medium} /> <span className="text-amber-500/70 font-normal">medium</span>
+                </span>
+                <span className="text-red-600 tabular-nums">
+                  <AnimatedCounter value={lcStats.hard} /> <span className="text-red-500/70 font-normal">hard</span>
+                </span>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400 py-1">Unable to load stats</p>
+          )}
+        </div>
+      )}
+
+      {/* Motivation Quote Card */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 transition-all hover:border-indigo-200/80">
+        <p className="text-sm italic text-gray-700 leading-relaxed">&ldquo;{quote.text}&rdquo;</p>
+        <p className="text-xs text-gray-400 font-medium mt-2">&mdash; {quote.author}</p>
+      </div>
+
+      {/* Sign Out */}
       <button type="button" onClick={handleLogout}
         className="w-full py-2 text-xs font-medium rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 active:scale-[0.98] transition-all">
         Sign Out
