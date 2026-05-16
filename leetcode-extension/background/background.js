@@ -42,13 +42,14 @@ async function logout() {
 
 async function checkAuth() {
   try {
-    const res = await fetch(`${APP_URL}/api/auth/me`, {
+    const res = await fetch(`${APP_URL}/api/auth/get-session`, {
       credentials: 'include',
     });
     if (res.ok) {
       const data = await res.json();
+      // Better Auth returns { user, session } from get-session
       isAuthenticated = true;
-      userEmail = data.user?.email || data.email || 'Logged in';
+      userEmail = data.user?.email || 'Logged in';
       await chrome.storage.local.set({ userEmail });
       return { authenticated: true, email: userEmail };
     }
