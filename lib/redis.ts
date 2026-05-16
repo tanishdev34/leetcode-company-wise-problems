@@ -14,7 +14,7 @@ export function getSecondsUntilMidnightUTC(): number {
 
 export const CACHE_TTL = {
   DAILY: getSecondsUntilMidnightUTC(),
-  STATS: 1800,
-  CALENDAR: 1800,
-  SUBMISSIONS: 1800,
+  STATS: 3600,
+  CALENDAR: 3600,
+  SUBMISSIONS: 3600,
 };
