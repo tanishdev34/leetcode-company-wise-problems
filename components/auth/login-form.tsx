@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
-export function LoginForm() {
+export function LoginForm({ redirectUrl = "/dashboard" }: { redirectUrl?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +26,7 @@ export function LoginForm() {
       setLoading("idle");
       return;
     }
-    router.push("/dashboard");
+    router.push(redirectUrl);
     router.refresh();
   }
 
@@ -34,7 +34,7 @@ export function LoginForm() {
     setError("");
     setLoading("google");
     try {
-      const { redirectTo, hardReload } = await signInWithGoogle("/dashboard");
+      const { redirectTo, hardReload } = await signInWithGoogle(redirectUrl);
       if (hardReload) return; // window.location.href already triggered
       if (redirectTo) {
         router.push(redirectTo);
