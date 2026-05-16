@@ -1,5 +1,5 @@
 export default defineContentScript({
-  matches: ['https://leetcode.com/problems/*'],
+  matches: ['https://leetcode.com/problems/*', 'https://leetcode.com/submissions/detail/*'],
   main() {
     let wrapEl: HTMLElement | null = null
     let labelEl: HTMLElement | null = null
@@ -9,8 +9,26 @@ export default defineContentScript({
     // ─── Slug ──────────────────────────────────────
 
     function extractTitleSlug() {
-      const m = location.pathname.match(/\/problems\/([^/]+)/)
-      return m ? m[1] : null
+      // 1. From URL path (e.g. /problems/two-sum/...)
+      let m = location.pathname.match(/\/problems\/([^/]+)/)
+      if (m) return m[1]
+
+      // 2. From /submissions/detail/<id>/ page — find a link to the problem
+      const link = document.querySelector<HTMLAnchorElement>('a[href*="/problems/"]')
+      if (link) {
+        m = link.pathname.match(/\/problems\/([^/]+)/)
+        if (m) return m[1]
+      }
+
+      // 3. Try finding the slug in the page title (e.g. "Two Sum - LeetCode")
+      const title = document.title
+      m = title.match(/^(.+?)\s*-\s*LeetCode/)
+      if (m) {
+        // Convert title text to slug: "Two Sum" → "two-sum"
+        return m[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      }
+
+      return null
     }
 
     function isSubmissionPage() {
