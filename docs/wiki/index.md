@@ -29,7 +29,9 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 - Updated [[components#layout]] `Navbar` — added "Stats" and "Codeforces" desktop + mobile nav links.
 - Updated [[middleware]] — `/stats` and `/codeforces` added to protected routes and matcher.
 - Enhanced [[extension]] — popup now shows LeetCode stats (easy/medium/hard), motivation quotes, animated counters (`AnimatedCounter`), `fadeSlideIn` entry animation. Background worker handles `GET_USER_PROFILE` and `GET_LEETCODE_STATS` messages.
-- Updated {{AGENTS.md}} project structure.
+- Added [[actions#get-apiquestionsrecommend]] — `GET /api/questions/recommend` suggests unsolved questions by topic overlap with user's solved questions.
+- Extension popup enhanced further: live quotes from zenquotes.io, contest rating display, recommended next question card, code extraction from Monaco editor on all problem pages.
+
 
 ### [2026-05-16] Browser extension
 - Created `leetcode-extension/` — Chrome/Edge Manifest V3 extension for adding LeetCode questions and solutions directly from LeetCode.com.

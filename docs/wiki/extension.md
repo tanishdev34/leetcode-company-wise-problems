@@ -15,7 +15,7 @@ leetcode-extension/
 ├── wxt.config.ts           # WXT configuration (host_permissions, etc.)
 ├── package.json
 ├── entrypoints/
-│   ├── background.ts       # Background service worker (auth, GraphQL, API, user profile, LC stats)
+│   ├── background.ts       # Background service worker (auth, GraphQL, API, user profile, LC stats, recommendations, quotes)
 │   ├── content.ts          # Content script (button injection, data extraction)
 │   └── popup/
 │       ├── index.html      # Popup entry HTML
@@ -46,7 +46,7 @@ Then load `leetcode-extension/.output/chrome-mv3/` in Chrome as an unpacked exte
 - Visit any LeetCode problem page (`/problems/<slug>/`) or submission detail page (`/problems/<slug>/submissions/<id>/`)
 - Click the floating blue "+ Add to Tracker" button at the bottom-right
 - The question metadata is fetched from LeetCode's GraphQL API
-- On submission pages, the solution code is also extracted and saved
+- Solution code is extracted from the Monaco editor on all problem pages (not just submission detail pages) and saved
 - Questions are linked to an "Extension" company in the app
 
 ## Popup
@@ -54,9 +54,14 @@ Then load `leetcode-extension/.output/chrome-mv3/` in Chrome as an unpacked exte
 The popup (`App.tsx`) provides:
 
 - **Auth UI** — Email/password login and Google OAuth flow (opens a tab, polls for session).
-- **Main view (authenticated)** — Shows the user's email, today's question add count (with animated `AnimatedCounter`), LeetCode stats card (easy/medium/hard solved counts with animated counters, fetched via `GET_USER_PROFILE` + `GET_LEETCODE_STATS` background handlers), a random motivation quote card, and a Sign Out button.
+- **Main view (authenticated)** — Shows:
+  - User's email
+  - Today's question add count (animated counter)
+  - LeetCode stats card: total solved, easy/medium/hard breakdown, **contest rating** (all with animated counters)
+  - **Recommended next question** card — suggests an unsolved question based on topics you've solved most (fetched via `GET_RECOMMENDED_QUESTION`)
+  - **Live motivation quote** — fetched from [zenquotes.io](https://zenquotes.io) API via `FETCH_QUOTE` background handler, shown with gradient background
+  - Sign Out button
 - **Animations** — `fadeSlideIn` keyframe animation on view transitions. `AnimatedCounter` component animates number increments over 600ms.
-- **Quote card** — Displays a random programming quote (from a curated list of 15 quotes) with a gradient background.
 
 ## Background Worker
 
@@ -70,7 +75,9 @@ The background script handles authentication, GraphQL queries, API calls, user p
 | `ADD_SOLUTION` | Content | Add question/solution — calls `POST /api/extension/add-solution` |
 | `GET_TODAY_COUNT` | Popup | Returns today's question count from local storage |
 | `GET_USER_PROFILE` | Popup | Fetches user profile via [[actions#get-apiuserprofile]] — returns `{ success, email, leetcodeUsername, codeforcesUsername }` |
-| `GET_LEETCODE_STATS` | Popup | Fetches LeetCode stats for the linked username via [[actions#get-leetcode-stats]] — returns `{ success, stats: { easy, medium, hard } }` |
+| `GET_LEETCODE_STATS` | Popup | Fetches LeetCode stats for the linked username via [[actions#get-leetcode-stats]] — returns `{ success, stats }` (includes solved counts + contest rating) |
+| `GET_RECOMMENDED_QUESTION` | Popup | Fetches a recommended question via `GET /api/questions/recommend` — returns `{ success, question: { title, leetcodeUrl, difficulty, topics } }` |
+| `FETCH_QUOTE` | Popup | Fetches a random quote from zenquotes.io — returns `{ success, text, author }` |
 
 ## Data Flow
 
