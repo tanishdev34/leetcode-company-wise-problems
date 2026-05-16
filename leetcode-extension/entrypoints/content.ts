@@ -199,25 +199,38 @@ export default defineContentScript({
       }
 
       btn.addEventListener('click', async () => {
-        if (btn.classList.contains('loading')) return
+        console.log('[LC Tracker] Button clicked')
+        if (btn.classList.contains('loading')) {
+          console.log('[LC Tracker] Already loading, ignoring click')
+          return
+        }
 
         const slug = extractTitleSlug()
+        console.log('[LC Tracker] Slug:', slug)
         if (!slug) { setState('fail', 'Invalid page'); return }
 
         setState('loading')
+        console.log('[LC Tracker] Set loading state')
 
         const { code, language } = extractCode()
+        console.log('[LC Tracker] Code extracted:', code ? `${code.length} chars` : 'none', 'lang:', language)
+
         if (isSubmissionPage() && !code) {
+          console.log('[LC Tracker] No code found on submission page, warning')
           setState('warn', 'Saving only')
           await new Promise(r => setTimeout(r, 1200))
         }
 
+        console.log('[LC Tracker] Checking auth...')
         const auth = await chrome.runtime.sendMessage({ action: 'CHECK_AUTH' })
+        console.log('[LC Tracker] Auth result:', auth)
         if (!auth.authenticated) { setState('fail', 'Login first'); return }
 
+        console.log('[LC Tracker] Sending ADD_SOLUTION...')
         const res = await chrome.runtime.sendMessage({
           action: 'ADD_SOLUTION', titleSlug: slug, code, language,
         })
+        console.log('[LC Tracker] ADD_SOLUTION result:', res)
         setState(res.success ? 'ok' : 'fail', res.error)
       })
 
