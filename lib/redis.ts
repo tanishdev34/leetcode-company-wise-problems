@@ -1,9 +1,16 @@
 import { Redis } from "@upstash/redis";
 
-export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || "https://peaceful-hippo-114036.upstash.io",
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || "gQAAAAAAAb10AAIgcDI5ZmZjYWUyNzQ3ZTM0MzQyOTA1MzJmOGQ5YmRlNzYwOQ",
-});
+const url = process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+if (!url || !token) {
+  throw new Error(
+    "Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables. " +
+      "Set them in .env file (see docs/wiki/configuration.md).",
+  );
+}
+
+export const redis = new Redis({ url, token });
 
 export function getSecondsUntilMidnightUTC(): number {
   const now = new Date();
