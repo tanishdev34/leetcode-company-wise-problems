@@ -78,6 +78,7 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 ├── prisma/
 │   ├── schema.prisma         # Database schema
 │   └── seed.ts               # CSV import script
+├── leetcode-extension/        # Browser extension
 ├── public/                   # Static assets
 └── middleware.ts             # Route protection
 ```

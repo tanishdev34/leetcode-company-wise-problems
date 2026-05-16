@@ -13,8 +13,15 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 | [[actions]] | Server actions, API routes, data flow | [[data-model]], [[pages]], [[components]], [[conventions]] |
 | [[configuration]] | Environment variables, config files | [[architecture]], [[data-model]], [[pages]], [[actions]] |
 | [[conventions]] | Coding style, naming, patterns | [[actions]], [[components]], [[architecture]] |
+| [[extension]] | Browser extension — Chrome/Edge Manifest V3, data extraction, setup | [[actions#post-apiextensionadd-solution]], [[data-model]] |
 
 ## Changelog
+
+### [2026-05-16] Browser extension
+- Created `leetcode-extension/` — Chrome/Edge Manifest V3 extension for adding LeetCode questions and solutions directly from LeetCode.com.
+- Created [[extension]] — documentation for extension structure, setup, usage, and data flow.
+- Added `POST /api/extension/add-solution` API route — upserts questions and saves solution code. See [[actions#post-apiextensionadd-solution]].
+- Updated [[AGENTS.md]] project structure to include `leetcode-extension/`.
 
 ### [2026-05-07] AI analysis moved to background queue
 - Added [[data-model#analysisjob-ai-analysis-queue]] model — tracks `pending`/`running`/`done`/`error` plus `attempts`/`maxAttempts`.
