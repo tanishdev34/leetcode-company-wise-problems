@@ -36,8 +36,9 @@ model User {
   analysisJobs     AnalysisJob[]
   emailVerified    Boolean        @default(false)
   role             String         @default("user")
-  leetcodeUsername String?
-  emailSubscribed  Boolean        @default(false)
+  leetcodeUsername    String?
+  codeforcesUsername  String?
+  emailSubscribed     Boolean        @default(false)
 
   @@map("user")
 }
