@@ -1,24 +1,6 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 type ViewState = 'loading' | 'auth' | 'main'
-
-const QUOTES = [
-  { text: "The only way to learn a new programming language is by writing programs in it.", author: "Dennis Ritchie" },
-  { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
-  { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
-  { text: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.", author: "Martin Fowler" },
-  { text: "Talk is cheap. Show me the code.", author: "Linus Torvalds" },
-  { text: "Programs must be written for people to read, and only incidentally for machines to execute.", author: "Harold Abelson" },
-  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
-  { text: "It's not a bug — it's an undocumented feature.", author: "Unknown" },
-  { text: "Simplicity is the soul of efficiency.", author: "Austin Freeman" },
-  { text: "Make it work, make it right, make it fast.", author: "Kent Beck" },
-  { text: "Debugging is twice as hard as writing the code in the first place.", author: "Brian Kernighan" },
-  { text: "The function of good software is to make the complex appear to be simple.", author: "Grady Booch" },
-  { text: "Before software can be reusable it first has to be usable.", author: "Ralph Johnson" },
-  { text: "Optimism is an occupational hazard of programming.", author: "Alan Perlis" },
-  { text: "In theory, there is no difference between theory and practice. But in practice, there is.", author: "Jan L. A. van de Snepscheut" },
-]
 
 function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
   const [display, setDisplay] = useState(0)
@@ -53,10 +35,11 @@ function App() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [leetcodeUsername, setLeetcodeUsername] = useState<string | null>(null)
-  const [lcStats, setLcStats] = useState<{ easy: number; medium: number; hard: number } | null>(null)
+  const [lcStats, setLcStats] = useState<{ easy: number; medium: number; hard: number; total: number; rating: number | null } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
-
-  const quote = useMemo(() => QUOTES[Math.floor(Math.random() * QUOTES.length)], [])
+  const [recommended, setRecommended] = useState<{ title: string; leetcodeUrl: string; difficulty: string; topics: string[] } | null>(null)
+  const [recLoading, setRecLoading] = useState(false)
+  const [quote, setQuote] = useState<{ text: string; author: string } | null>(null)
 
   // ─── Check auth on mount ──────────────────────────
 
@@ -89,14 +72,36 @@ function App() {
       const res = await browser.runtime.sendMessage({ action: 'GET_LEETCODE_STATS', username: leetcodeUsername })
       if (res.success && res.stats) {
         setLcStats({
-          easy: res.stats.easy ?? 0,
-          medium: res.stats.medium ?? 0,
-          hard: res.stats.hard ?? 0,
+          easy: res.stats.solved?.easySolved ?? 0,
+          medium: res.stats.solved?.mediumSolved ?? 0,
+          hard: res.stats.solved?.hardSolved ?? 0,
+          total: res.stats.solved?.solvedProblem ?? 0,
+          rating: res.stats.contest?.contestRating ?? null,
         })
       }
       setStatsLoading(false)
+
+      // Fetch recommended question
+      setRecLoading(true)
+      const rec = await browser.runtime.sendMessage({ action: 'GET_RECOMMENDED_QUESTION' })
+      if (rec.success && rec.question) {
+        setRecommended(rec.question)
+      }
+      setRecLoading(false)
     })()
   }, [leetcodeUsername])
+
+  // ─── Fetch quote ──────────────────────────────────
+
+  useEffect(() => {
+    if (view !== 'main') return
+    ;(async () => {
+      const res = await browser.runtime.sendMessage({ action: 'FETCH_QUOTE' })
+      if (res.success) {
+        setQuote({ text: res.text, author: res.author })
+      }
+    })()
+  }, [view])
 
   // ─── Email login ──────────────────────────────────
 
@@ -166,6 +171,8 @@ function App() {
     setTodayCount(0)
     setLeetcodeUsername(null)
     setLcStats(null)
+    setRecommended(null)
+    setQuote(null)
   }, [])
 
   // ─── Register ─────────────────────────────────────
@@ -257,7 +264,7 @@ function App() {
 
   // ─── Main (authenticated) view ─────────────────────
 
-  const totalLcSolved = lcStats ? lcStats.easy + lcStats.medium + lcStats.hard : 0
+  const totalLcSolved = lcStats?.total ?? 0
 
   return (
     <div className="p-5 flex flex-col gap-4 animate-[fadeSlideIn_0.2s_ease-out]">
@@ -306,6 +313,12 @@ function App() {
                   <AnimatedCounter value={lcStats.hard} /> <span className="text-red-500/70 font-normal">hard</span>
                 </span>
               </div>
+              {lcStats.rating !== null && (
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100/80">
+                  <span className="text-xs text-gray-400 font-medium">Rating</span>
+                  <span className="text-sm font-bold text-gray-900 tabular-nums">{lcStats.rating}</span>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-xs text-gray-400 py-1">Unable to load stats</p>
@@ -313,11 +326,45 @@ function App() {
         </div>
       )}
 
+      {/* Recommended Question Card */}
+      {recommended && (
+        <div className="border border-gray-100 rounded-2xl p-4 flex flex-col gap-2.5 transition-all hover:border-blue-200/80 group">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recommended Next</span>
+          <a
+            href={recommended.leetcodeUrl}
+            target="_blank"
+            className="text-sm font-semibold text-blue-600 group-hover:text-blue-700 transition-colors no-underline leading-snug"
+          >
+            {recommended.title}
+          </a>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${
+              recommended.difficulty === 'EASY' ? 'bg-emerald-100 text-emerald-700' :
+              recommended.difficulty === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+              'bg-red-100 text-red-700'
+            }`}>
+              {recommended.difficulty}
+            </span>
+            {recommended.topics.slice(0, 3).map(t => (
+              <span key={t} className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Motivation Quote Card */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 transition-all hover:border-indigo-200/80">
-        <p className="text-sm italic text-gray-700 leading-relaxed">&ldquo;{quote.text}&rdquo;</p>
-        <p className="text-xs text-gray-400 font-medium mt-2">&mdash; {quote.author}</p>
-      </div>
+      {quote ? (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 transition-all hover:border-indigo-200/80">
+          <p className="text-sm italic text-gray-700 leading-relaxed">&ldquo;{quote.text}&rdquo;</p>
+          <p className="text-xs text-gray-400 font-medium mt-2">&mdash; {quote.author}</p>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100/60 rounded-2xl p-4 flex items-center justify-center py-6">
+          <div className="w-4 h-4 border-2 border-gray-200 border-t-indigo-500 rounded-full animate-spin" />
+        </div>
+      )}
 
       {/* Sign Out */}
       <button type="button" onClick={handleLogout}

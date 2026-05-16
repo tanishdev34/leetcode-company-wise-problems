@@ -172,6 +172,34 @@ async function getLeetcodeStats(username: string) {
   return { success: false as const }
 }
 
+// ─── Quote ──────────────────────────────────────────
+
+async function fetchQuote() {
+  try {
+    const res = await fetch('https://zenquotes.io/api/random')
+    if (res.ok) {
+      const data = await res.json()
+      if (data?.[0]?.q && data?.[0]?.a) {
+        return { success: true as const, text: data[0].q, author: data[0].a }
+      }
+    }
+  } catch { /* ignore */ }
+  return { success: false as const }
+}
+
+// ─── Recommended Question ───────────────────────────
+
+async function getRecommendedQuestion() {
+  try {
+    const res = await fetch(`${APP_URL}/api/questions/recommend`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      return { success: true as const, question: data.question }
+    }
+  } catch { /* ignore */ }
+  return { success: false as const }
+}
+
 // ─── Today's Count ─────────────────────────────────
 
 async function getTodayCount() {
@@ -218,6 +246,12 @@ export default defineBackground(() => {
             break
           case 'GET_LEETCODE_STATS':
             sendResponse(await getLeetcodeStats(message.username))
+            break
+          case 'GET_RECOMMENDED_QUESTION':
+            sendResponse(await getRecommendedQuestion())
+            break
+          case 'FETCH_QUOTE':
+            sendResponse(await fetchQuote())
             break
           default:
             sendResponse({ success: false, error: 'Unknown action' })
