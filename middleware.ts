@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_ROUTES = ["/dashboard", "/admin"];
+const PROTECTED_ROUTES = ["/dashboard", "/admin", "/stats", "/codeforces"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -27,5 +27,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/stats/:path*", "/codeforces/:path*"],
 };

@@ -51,6 +51,8 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
                 </Link>
               )}
               <Link href="/dashboard"><Button variant="ghost" size="sm">Dashboard</Button></Link>
+              <Link href="/stats"><Button variant="ghost" size="sm">Stats</Button></Link>
+              <Link href="/codeforces"><Button variant="ghost" size="sm">Codeforces</Button></Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut} disabled={signingOut}>
                 {signingOut ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Signing out...</> : "Sign Out"}
               </Button>
@@ -89,6 +91,12 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
               <>
                 <Link href="/dashboard" className="py-2 text-sm" onClick={() => setOpen(false)}>
                   Dashboard
+                </Link>
+                <Link href="/stats" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Stats
+                </Link>
+                <Link href="/codeforces" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Codeforces
                 </Link>
                 {isAdmin && (
                   <Link
