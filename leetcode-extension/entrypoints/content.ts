@@ -13,19 +13,30 @@ export default defineContentScript({
       let m = location.pathname.match(/\/problems\/([^/]+)/)
       if (m) return m[1]
 
-      // 2. From /submissions/detail/<id>/ page — find a link to the problem
+      // 2. On /submissions/detail/ pages, the document title is most reliable
+      //    e.g. "Minimize Array Sum Using Divisible Replacements - LeetCode"
+      if (location.pathname.startsWith('/submissions/detail/')) {
+        const title = document.title
+        m = title.match(/^(.+?)\s*-\s*LeetCode/)
+        if (m) {
+          return m[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+        }
+      }
+
+      // 3. Fallback: try heading links (most likely the current problem's title link)
+      const headingLink = document.querySelector<HTMLAnchorElement>(
+        'h1 a[href*="/problems/"], h2 a[href*="/problems/"], h3 a[href*="/problems/"], h4 a[href*="/problems/"]'
+      )
+      if (headingLink) {
+        m = headingLink.pathname.match(/\/problems\/([^/]+)/)
+        if (m) return m[1]
+      }
+
+      // 4. Last resort: any link to a problem on the page
       const link = document.querySelector<HTMLAnchorElement>('a[href*="/problems/"]')
       if (link) {
         m = link.pathname.match(/\/problems\/([^/]+)/)
         if (m) return m[1]
-      }
-
-      // 3. Try finding the slug in the page title (e.g. "Two Sum - LeetCode")
-      const title = document.title
-      m = title.match(/^(.+?)\s*-\s*LeetCode/)
-      if (m) {
-        // Convert title text to slug: "Two Sum" → "two-sum"
-        return m[1].toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
       }
 
       return null
