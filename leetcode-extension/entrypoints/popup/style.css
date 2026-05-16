@@ -1,17 +1,105 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg: #0a0a0c;
+  --color-surface: #111114;
+  --color-surface-2: #16161b;
+  --color-border: #26262d;
+  --color-border-strong: #34343d;
+  --color-text: #f4f4f6;
+  --color-muted: #8a8a96;
+  --color-subtle: #5a5a64;
+  --color-brand: #818cf8;
+  --color-brand-2: #c084fc;
+}
+
 @keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+@keyframes growBar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes floatOrb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(8px, -6px) scale(1.06); }
+}
+
+.card-enter   { animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.card-delay-1 { animation-delay: 60ms; }
+.card-delay-2 { animation-delay: 120ms; }
+.card-delay-3 { animation-delay: 180ms; }
+.card-delay-4 { animation-delay: 240ms; }
+.card-delay-5 { animation-delay: 300ms; }
+
+.bar-grow { transform-origin: left; animation: growBar 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.shimmer-bg {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.brand-gradient-text {
+  background: linear-gradient(135deg, #a5b4fc 0%, #c084fc 50%, #f0abfc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(40px);
+  pointer-events: none;
+  animation: floatOrb 8s ease-in-out infinite, pulseGlow 5s ease-in-out infinite;
 }
 
 body {
-  @apply w-[340px] min-h-[360px] bg-white text-gray-900 antialiased;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  @apply w-[360px] min-h-[380px] text-[var(--color-text)] antialiased relative overflow-hidden;
+  background: #0a0a0c;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', sans-serif;
 }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(600px 300px at 0% 0%, rgba(129, 140, 248, 0.10), transparent 60%),
+    radial-gradient(500px 280px at 100% 100%, rgba(192, 132, 252, 0.08), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+/* Subtle scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2a32; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a44; }

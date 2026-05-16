@@ -17,6 +17,19 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 
 ## Changelog
 
+### [2026-05-16] Email + extension visual refresh
+- **Emails** — rewrote `emails/daily-question.tsx` and `emails/contest-reminder.tsx` with gradient hero panels (indigo→fuchsia for daily, amber→rose→magenta for contest), date badge column, motivational quote card (seeded per-day/per-contest from a curated pool), brand wordmark header. `daily-question` now accepts an optional `streak` prop.
+- **Extension popup** — dark theme with radial-gradient backdrop, floating decorative orbs, glassmorphism cards (`glass` utility), staggered `card-enter` entrance animations, shimmer loading skeletons, animated horizontal difficulty bars (`DifficultyBar`) replacing the inline easy/med/hard text, gradient hero card for "Today", gradient brand wordmark, hover lifts on cards/buttons. New CSS utilities in `entrypoints/popup/style.css`: `card-enter`, `card-delay-{1..5}`, `bar-grow`, `shimmer-bg`, `glass`, `brand-gradient-text`, `orb`, plus `fadeUp`, `shimmer`, `pulseGlow`, `growBar`, `floatOrb` keyframes.
+
+### [2026-05-16] React Email migration — beautiful email templates
+- Migrated email templates from raw HTML strings to **React Email** component-based architecture.
+- Created `emails/daily-question.tsx` — React Email component for daily problem (Tailwind + pixelBasedPreset).
+- Created `emails/contest-reminder.tsx` — React Email component for contest reminders.
+- Updated `lib/email.tsx` — now uses `render()` from `react-email` to generate HTML from JSX components.
+- Added `react-email` dependency — ensures better email client compatibility, proper HTML structure, and easier maintenance.
+- Email templates now use Tailwind CSS with pixel-based preset for cross-client consistency.
+- Updated `app/api/cron/daily/route.ts` — calls new async `renderDailyQuestionEmail` / `renderContestReminderEmail`.
+
 ### [2026-05-16] Codeforces integration, full stats page, dashboard reorg, extension enhancement
 - Added [[data-model#user]] `codeforcesUsername` field — linked via [[actions#codeforcests]] `saveCodeforcesUsername`.
 - Created `actions/codeforces.ts` — [[actions#codeforcests]] server action to save Codeforces handle.
@@ -51,7 +64,8 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 - Added `emailSubscribed` field to [[data-model#user]] model.
 - Created `actions/email.ts` — [[actions#emailts]] toggle subscription server action.
 - Created `components/email-subscription-toggle.tsx` — [[components#dashboard]] toggle button on dashboard (beside sync).
-- Created `lib/email.ts` — nodemailer utility with styled HTML email templates.
+- Created `lib/email.tsx` — React Email + nodemailer utility for component-based email templates.
+- Created `emails/` — React Email components for daily problem and contest reminders.
 - Created `app/api/cron/daily-question/route.ts` — [[actions#daily-question-cron]] sends daily LeetCode problem at 11 AM IST.
 - Created `app/api/cron/contest-reminder/route.ts` — [[actions#contest-reminder-cron]] runs every 6 hours, sends reminders 30 min–2 hours before contests.
 - Created `vercel.json` with cron schedules (see [[configuration#config-files]]).

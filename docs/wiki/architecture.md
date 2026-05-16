@@ -15,6 +15,7 @@
 | **Search** | PostgreSQL `pg_trgm` extension | [[configuration#search-index]], [[actions#get-apisearchqpage1pagesize20]] |
 | **Caching** | Upstash Redis | [[configuration#environment-variables]] |
 | **AI Analysis** | Cerebras via AI SDK (`@ai-sdk/cerebras`) — queued background jobs via `next/server` `after()` with retry/backoff | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]] |
+| **Email** | React Email (component-based templates) + Nodemailer (transport) | [[actions#emailts]], [[lib/email]] |
 | **Package Manager** | Bun | [[configuration#package-scripts]] |
 
 ## Data Flow
@@ -79,6 +80,8 @@ lib/               # Shared utilities
 prisma/            # Database
   schema.prisma    #   Schema → [[data-model]]
   seed.ts          #   CSV import script → [[data-model]]
+
+emails/             # React Email components (daily question, contest reminders) → [[actions#emailts]]
 
 docs/              # Documentation
   wiki/            #   Project wiki (this) → [[index]]

@@ -72,6 +72,7 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 │   └── ...                   # Custom components
 ├── generated/prisma/         # Generated Prisma client (don't edit)
 ├── lib/                      # Utilities (db, auth, redis, utils)
+├── emails/                  # React Email components (daily question, contest reminders)
 ├── docs/
 │   ├── wiki/                 # Project wiki (this)
 │   └── superpowers/          # Design specs & implementation plans

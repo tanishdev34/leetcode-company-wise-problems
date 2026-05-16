@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { sendEmail, dailyQuestionEmailHtml, contestReminderEmailHtml } from "@/lib/email";
+import { sendEmail, renderDailyQuestionEmail, renderContestReminderEmail } from "@/lib/email";
 
 const DAILY_API = "https://alfa-leetcode-api.onrender.com/daily";
 const CONTESTS_API = "https://alfa-leetcode-api.onrender.com/contests/upcoming";
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       results.dailyQuestion = question.questionTitle;
 
       if (subscribedUsers.length > 0) {
-        const html = dailyQuestionEmailHtml(question);
+        const html = await renderDailyQuestionEmail(question);
         let sent = 0;
         for (const user of subscribedUsers) {
           if (!user.email) continue;
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
             const alreadyNotified = await redis.get(`${NOTIFIED_PREFIX}${contest.titleSlug}`);
             if (alreadyNotified) continue;
 
-            const html = contestReminderEmailHtml(contest);
+            const html = await renderContestReminderEmail(contest);
             for (const user of subscribedUsers) {
               if (!user.email) continue;
               await sendEmail({

@@ -57,6 +57,21 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | `getEmailSubscription()` | Yes | — | `{ subscribed: boolean }` | [[components#dashboard]] `EmailSubscriptionToggle` | No |
 | `toggleEmailSubscription()` | Yes | — | `{ subscribed: boolean }` | [[components#dashboard]] `EmailSubscriptionToggle` | Yes — toggles [[data-model#user]] `emailSubscribed` |
 
+### `lib/email.tsx` — React Email rendering + Nodemailer transport
+
+Email templates are built using **React Email** components in `emails/`:
+- `emails/daily-question.tsx` — `DailyQuestionEmail` component for daily LeetCode problem emails
+- `emails/contest-reminder.tsx` — `ContestReminderEmail` component for contest reminders
+
+The `lib/email.tsx` utility:
+- Uses `render()` from `react-email` to convert JSX components to HTML strings
+- Uses Nodemailer for SMTP transport (`sendEmail()`)
+- Exposes `renderDailyQuestionEmail(question)` and `renderContestReminderEmail(contest)` async functions
+- Templates use Tailwind CSS with `pixelBasedPreset` for cross-email-client compatibility
+- Dark theme (#0a0a0b / #18181b) matching the app's monospace aesthetic
+
+Called by: [[pages#daily-question-cron]] `GET /api/cron/daily`
+
 ## `getCompanyQuestions()` — Sorting Logic
 
 1. Fetch all `CompanyQuestion` IDs + frequencies for `(companyId, timePeriod)` from [[data-model#companyquestion-join-table]]
