@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
 import type { Difficulty, TimePeriod } from "@/generated/prisma/client"
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth.api.getSession({ headers: await headers() })
+    const session = await auth.api.getSession({ headers: req.headers })
     if (!session?.user) {
       return NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 })
     }
@@ -33,6 +32,27 @@ export async function POST(req: NextRequest) {
     if (!["EASY", "MEDIUM", "HARD"].includes(diff)) {
       return NextResponse.json(
         { success: false, error: `Invalid difficulty: ${difficulty}` },
+        { status: 422 }
+      )
+    }
+
+    if (!Array.isArray(topics)) {
+      return NextResponse.json(
+        { success: false, error: "Missing or invalid field: topics (must be an array)" },
+        { status: 422 }
+      )
+    }
+
+    if (typeof acceptanceRate !== "number") {
+      return NextResponse.json(
+        { success: false, error: "Missing or invalid field: acceptanceRate (must be a number)" },
+        { status: 422 }
+      )
+    }
+
+    if (code && code.length > 50000) {
+      return NextResponse.json(
+        { success: false, error: "Code exceeds 50,000 characters" },
         { status: 422 }
       )
     }
