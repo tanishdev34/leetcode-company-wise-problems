@@ -19,73 +19,71 @@ function isSubmissionPage() {
 function extractCode() {
   if (!isSubmissionPage()) return { code: null, language: null };
 
-  // Try multiple selectors for LeetCode's Monaco editor
-  const selectors = [
-    '.view-lines.monaco-mouse-cursor-text',  // Monaco view zone
-    'pre',                                     // Plain <pre> element
-    '#solution-code',                          // Legacy textarea
-    'textarea.code-area',                      // Alternative textarea
-  ];
-
   let code = null;
   let language = null;
 
-  for (const sel of selectors) {
-    const el = document.querySelector(sel);
-    if (el) {
-      if (sel === '.view-lines.monaco-mouse-cursor-text') {
-        // Monaco: each .view-line is one line
-        const lines = el.querySelectorAll('.view-line');
-        code = Array.from(lines)
-          .map(line => line.textContent)
-          .join('\n');
-      } else {
-        code = el.textContent;
-      }
-      break;
-    }
+  // 1. Try syntax-highlighted <code> block (react-syntax-highlighter on LC submission pages)
+  //    Structure: <code class="language-cpp"><span><span class="linenumber">1</span><span class="token">class</span>...
+  const highlightedCode = document.querySelector('code[class*="language-"]');
+  if (highlightedCode) {
+    // Clone to avoid mutating the page, then strip line number spans
+    const clone = highlightedCode.cloneNode(true);
+    clone.querySelectorAll('.linenumber').forEach(el => el.remove());
+    code = clone.textContent.trim();
+    // Detect language from the class (e.g. "language-cpp" → "cpp")
+    const langMatch = highlightedCode.className.match(/language-(\w+)/);
+    if (langMatch) language = langMatch[1];
   }
 
-  // Also try to find code in the newer LeetCode UI
+  // 2. Try Monaco editor view zone (old LC UI)
   if (!code) {
-    // Check for code in a data-keybinding or role="code" element
-    const codeBlock = document.querySelector('[role="code"]');
-    if (codeBlock) {
-      code = codeBlock.textContent;
+    const monacoLines = document.querySelectorAll('.view-lines.monaco-mouse-cursor-text .view-line');
+    if (monacoLines.length > 0) {
+      code = Array.from(monacoLines).map(line => line.textContent).join('\n');
     }
   }
 
-  // Detect language
-  const langMap = {
-    cpp: ['cpp', 'c++'],
-    java: ['java'],
-    python: ['python', 'py'],
-    python3: ['python3'],
-    javascript: ['javascript', 'js'],
-    typescript: ['typescript', 'ts'],
-    go: ['go', 'golang'],
-    rust: ['rust', 'rs'],
-    swift: ['swift'],
-    kotlin: ['kotlin', 'kt'],
-  };
-
-  const langEl = document.querySelector('[data-cy="lang-select"], .language-selector__selected, .language');
-  if (langEl) {
-    const langText = langEl.textContent.trim().toLowerCase();
-    for (const [key, aliases] of Object.entries(langMap)) {
-      if (aliases.includes(langText)) {
-        language = key;
-        break;
-      }
+  // 3. Fallback: plain <pre> element
+  if (!code) {
+    const pre = document.querySelector('pre');
+    if (pre) {
+      // Try to strip line numbers if present
+      const clone = pre.cloneNode(true);
+      clone.querySelectorAll('.linenumber').forEach(el => el.remove());
+      code = clone.textContent.trim();
     }
   }
 
-  // Fallback: try to detect from code block CSS class
+  // 4. Fallback: textarea
+  if (!code) {
+    const textarea = document.querySelector('#solution-code, textarea.code-area');
+    if (textarea) code = textarea.value || textarea.textContent;
+  }
+
+  // Detect language (if not already detected from <code> class)
   if (!language) {
-    const codePre = document.querySelector('pre code');
-    if (codePre) {
-      const match = codePre.className.match(/language-(\w+)/);
-      if (match) language = match[1];
+    const langMap = {
+      cpp: ['cpp', 'c++'],
+      java: ['java'],
+      python: ['python', 'py'],
+      python3: ['python3'],
+      javascript: ['javascript', 'js'],
+      typescript: ['typescript', 'ts'],
+      go: ['go', 'golang'],
+      rust: ['rust', 'rs'],
+      swift: ['swift'],
+      kotlin: ['kotlin', 'kt'],
+    };
+
+    const langEl = document.querySelector('[data-cy="lang-select"], .language-selector__selected, .language');
+    if (langEl) {
+      const langText = langEl.textContent.trim().toLowerCase();
+      for (const [key, aliases] of Object.entries(langMap)) {
+        if (aliases.includes(langText)) {
+          language = key;
+          break;
+        }
+      }
     }
   }
 
