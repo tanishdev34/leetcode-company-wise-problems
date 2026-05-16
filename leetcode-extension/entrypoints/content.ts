@@ -49,12 +49,10 @@ export default defineContentScript({
     // ─── Code Extraction ───────────────────────────
 
     function extractCode(): { code: string | null; language: string | null } {
-      if (!isSubmissionPage()) return { code: null, language: null }
-
       let code: string | null = null
       let lang: string | null = null
 
-      // 1. Syntax-highlighted <code> block
+      // 1. Syntax-highlighted <code> block (submission pages)
       const highlightedCode = document.querySelector<HTMLElement>('code[class*="language-"]')
       if (highlightedCode) {
         const clone = highlightedCode.cloneNode(true) as HTMLElement
@@ -65,7 +63,7 @@ export default defineContentScript({
         return { code, language: lang }
       }
 
-      // 2. Monaco editor
+      // 2. Monaco editor (problem pages & submission pages)
       const monacoLines = document.querySelectorAll('.view-lines.monaco-mouse-cursor-text .view-line')
       if (monacoLines.length > 0) {
         code = Array.from(monacoLines).map(l => l.textContent).join('\n')
@@ -226,8 +224,8 @@ export default defineContentScript({
         const { code, language } = extractCode()
         console.log('[LC Tracker] Code extracted:', code ? `${code.length} chars` : 'none', 'lang:', language)
 
-        if (isSubmissionPage() && !code) {
-          console.log('[LC Tracker] No code found on submission page, warning')
+        if (!code) {
+          console.log('[LC Tracker] No code found, saving question only')
           setState('warn', 'Saving only')
           await new Promise(r => setTimeout(r, 1200))
         }
