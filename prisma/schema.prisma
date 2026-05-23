@@ -23,19 +23,23 @@ enum TimePeriod {
 }
 
 model User {
-  id               String         @id @default(cuid())
-  email            String         @unique
+  id               String           @id @default(cuid())
+  email            String           @unique
   name             String?
   passwordHash     String?
   image            String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   sessions         Session[]
   accounts         Account[]
   userQuestions    UserQuestion[]
   analysisJobs     AnalysisJob[]
-  emailVerified    Boolean        @default(false)
-  role             String         @default("user")
+  solutionReviews  SolutionReview[]
+  studyPlans       StudyPlan[]
+  reviewItems      ReviewItem[]
+  interviewSessions InterviewSession[]
+  emailVerified    Boolean          @default(false)
+  role             String           @default("user")
   leetcodeUsername    String?
   codeforcesUsername  String?
   emailSubscribed     Boolean        @default(false)
@@ -99,6 +103,10 @@ model Question {
   userQuestions    UserQuestion[]
   companyQuestions CompanyQuestion[]
   analysisJobs     AnalysisJob[]
+  solutionReviews  SolutionReview[]
+  studyPlanItems   StudyPlanItem[]
+  reviewItems      ReviewItem[]
+  interviewSessions InterviewSession[]
 
   @@index([difficulty])
 }
@@ -154,6 +162,104 @@ model UserQuestion {
   @@unique([userId, questionId])
   @@index([userId])
   @@index([questionId])
+}
+
+model StudyPlan {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  weekStart DateTime        // Monday of the plan week
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     StudyPlanItem[]
+
+  @@index([userId])
+  @@map("study_plan")
+}
+
+model StudyPlanItem {
+  id         String     @id @default(cuid())
+  planId     String
+  questionId String
+  dayOfWeek  Int        // 0=Sunday, 1=Monday, ..., 6=Saturday
+  status     String     @default("planned") // planned | in_progress | completed
+  notes      String?
+  sortOrder  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  plan       StudyPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([planId])
+  @@index([questionId])
+  @@map("study_plan_item")
+}
+
+model ReviewItem {
+  id             String    @id @default(cuid())
+  userId         String
+  questionId     String
+  confidence     Int       @default(3) // 1 (forgot) to 5 (mastered)
+  reviewCount    Int       @default(0)
+  lastReviewedAt DateTime?
+  nextReviewAt   DateTime
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, nextReviewAt])
+  @@map("review_item")
+}
+
+model SolutionReview {
+  id              String    @id @default(cuid())
+  userId          String
+  questionId      String
+  code            String
+  language        String    @default("cpp")
+  status          String    @default("pending") // pending | running | done | error
+  error           String?
+  correctness     String?   // "correct" | "partially_correct" | "incorrect"
+  timeComplexity  String?
+  spaceComplexity String?
+  edgeCases       String?   // JSON array of edge cases
+  explanation     String?   // explanation quality feedback
+  followUps       String?   // JSON array of follow-up questions
+  suggestions     String?   // improvement suggestions
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question        Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, questionId])
+  @@map("solution_review")
+}
+
+model InterviewSession {
+  id           String            @id @default(cuid())
+  userId       String
+  questionId   String
+  startedAt    DateTime          @default(now())
+  endedAt      DateTime?
+  duration     Int?              // Duration in seconds
+  status       String            @default("in_progress") // in_progress | completed | cancelled
+  type         String            @default("solo") // solo | multiplayer
+  roomCode     String?           @unique // Shareable room code for multiplayer sessions
+  rating       Int?              // 1-5 self-rating
+  notes        String?
+  reflection   String?           // Post-interview reflection
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question     Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("interview_session")
 }
 
 model Verification {

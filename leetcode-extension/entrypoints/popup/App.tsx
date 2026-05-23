@@ -110,12 +110,24 @@ function App() {
 
   useEffect(() => {
     if (view !== 'main') return
+    let cancelled = false
     ;(async () => {
-      const res = await browser.runtime.sendMessage({ action: 'FETCH_QUOTE' })
-      if (res.success) {
-        setQuote({ text: res.text, author: res.author })
+      try {
+        const res = await browser.runtime.sendMessage({ action: 'FETCH_QUOTE' })
+        if (cancelled) return
+        if (res?.success && res.text) {
+          setQuote({ text: res.text, author: res.author })
+          return
+        }
+      } catch { /* fall through */ }
+      if (!cancelled) {
+        setQuote({
+          text: "If you no longer go for a gap that exists, you are no longer a racing driver.",
+          author: "Ayrton Senna",
+        })
       }
     })()
+    return () => { cancelled = true }
   }, [view])
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {

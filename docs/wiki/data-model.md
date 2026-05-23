@@ -7,6 +7,9 @@
 ```
 User ──< UserQuestion >── Question ──< CompanyQuestion >── Company
                                         (join table)
+User ──< StudyPlan >── StudyPlanItem >── Question
+User ──< ReviewItem >── Question
+User ──< InterviewSession >── Question
 ```
 
 Each relation:
@@ -14,6 +17,9 @@ Each relation:
 - [[actions#getCompanyQuestions|getCompanyQuestions]] queries `CompanyQuestion` + `UserQuestion`
 - [[actions#getQuestionDetail|getQuestionDetail]] joins through `CompanyQuestion` → `Company`
 - [[actions#getDashboardStats|getDashboardStats]] aggregates across `UserQuestion` + `Question`
+- [[actions#studyplanner|study-planner]] manages `StudyPlan` + `StudyPlanItem`
+- [[actions#reviewts|review]] manages `ReviewItem` (spaced repetition)
+- [[actions#readinessts|readiness]] computes per-company readiness scores (derived)
 
 ## Models
 
@@ -31,8 +37,8 @@ Each relation:
 | `emailSubscribed` | Boolean | Default `false` — toggled via [[actions#emailts]] `toggleEmailSubscription`, used by [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]] |
 | `emailVerified` | Boolean | Default `false` |
 
-Relations: `sessions`, `accounts`, `userQuestions`
-Used in: [[actions#toggleSolved]], [[components#auth]] forms, [[pages#dashboard-dashboard]]
+Relations: `sessions`, `accounts`, `userQuestions`, `solutionReviews`, `studyPlans`, `reviewItems`, `interviewSessions`
+Used in: [[actions#toggleSolved]], [[actions#studyplanner]], [[actions#reviewts]], [[actions#solution-review-actions]], [[components#auth]] forms, [[pages#dashboard-dashboard]]
 
 ### Session
 Better Auth session model. Linked to `User` via `userId`. Checked by [[actions]] auth guard pattern.
@@ -62,7 +68,7 @@ Used in: [[pages#companies-list-companies]], [[pages#company-detail-companiesslu
 | `acceptanceRate` | Float | 0.0 to 1.0 |
 | `createdAt` | DateTime | Auto-set |
 
-Relations: `userQuestions`, `companyQuestions`
+Relations: `userQuestions`, `companyQuestions`, `solutionReviews`, `studyPlanItems`, `reviewItems`, `interviewSessions`
 Index: `difficulty`
 Used in: [[components#question-table]], [[components#question-row]], [[actions#getQuestionDetail]]
 
@@ -125,6 +131,120 @@ Indexes: `(userId, questionId, status)`, `(userId, questionId, createdAt)`
 Worker: `lib/analyze.ts` `processAnalysisJob(jobId)` — runs Cerebras + merges into [[#userquestion-user-progress]]; retries with exponential backoff (2s, 8s, 30s).
 
 Lifecycle: created by `POST /api/analyze`, scheduled via `next/server` `after()`, polled by client via `GET /api/analyze`.
+
+### StudyPlan
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `userId` | String | FK → User (cascade delete) |
+| `name` | String | Plan name (e.g., "Week 1 - Arrays") |
+| `weekStart` | DateTime | Monday of the plan week |
+| `createdAt` | DateTime | Auto-set |
+| `updatedAt` | DateTime | Auto-set |
+
+Relations: `user`, `items` (StudyPlanItem[])
+Index: `userId`
+Created by: [[actions#studyplanner]] `createStudyPlan()`
+
+### StudyPlanItem
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `planId` | String | FK → StudyPlan (cascade delete) |
+| `questionId` | String | FK → Question |
+| `dayOfWeek` | Int | 0=Sunday, 1=Monday, ..., 6=Saturday |
+| `status` | String | `"planned" \| "in_progress" \| "completed"` (default `"planned"`) |
+| `notes` | String? | Optional notes |
+| `sortOrder` | Int | Display order within day (default 0) |
+| `createdAt` | DateTime | Auto-set |
+| `updatedAt` | DateTime | Auto-set |
+
+Relations: `plan` (StudyPlan), `question` (Question)
+Indexes: `planId`, `questionId`
+Managed by: [[actions#studyplanner]] `addPlanItem()`, `updatePlanItemStatus()`, `removePlanItem()`
+
+### ReviewItem
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `userId` | String | FK → User (cascade delete) |
+| `questionId` | String | FK → Question |
+| `confidence` | Int | 1 (forgot) to 5 (mastered) — default 3 |
+| `reviewCount` | Int | How many times reviewed (default 0) |
+| `lastReviewedAt` | DateTime? | When last reviewed |
+| `nextReviewAt` | DateTime | When next review is due |
+| `createdAt` | DateTime | Auto-set |
+| `updatedAt` | DateTime | Auto-set |
+
+Unique: `(userId, questionId)`
+Index: `(userId, nextReviewAt)`
+
+**Review intervals by confidence:**
+| Confidence | Label | Next Review |
+|------------|-------|-------------|
+| 1 | Forgot | 1 day |
+| 2 | Struggled | 2 days |
+| 3 | Moderate | 4 days |
+| 4 | Good | 7 days |
+| 5 | Mastered | 14 days |
+
+Auto-created when a question is solved via [[actions#toggleSolved]]. Managed by [[actions#reviewts]].
+
+### SolutionReview (AI Interview Coach queue)
+Tracks background AI solution review runs, providing interview-style feedback on saved code.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key (also the polling key) |
+| `userId` | String | FK → User (cascade delete) |
+| `questionId` | String | FK → Question (cascade delete) |
+| `code` | String | Snapshot of code at submission time |
+| `language` | String | Default `"cpp"` |
+| `status` | String | `"pending" \| "running" \| "done" \| "error"` (default `"pending"`) |
+| `error` | String? | Last error message if a retry failed |
+| `correctness` | String? | `"correct" \| "partially_correct" \| "incorrect"` |
+| `timeComplexity` | String? | Big O time complexity with reasoning |
+| `spaceComplexity` | String? | Big O space complexity with reasoning |
+| `edgeCases` | String? | JSON array of edge cases |
+| `explanation` | String? | Explanation quality feedback |
+| `followUps` | String? | JSON array of follow-up questions |
+| `suggestions` | String? | Improvement suggestions |
+| `attempts` | Int | Number of attempts so far (default 0) |
+| `maxAttempts` | Int | Max retry attempts (default 3) |
+| `createdAt` | DateTime | — |
+| `updatedAt` | DateTime | — |
+
+Index: `(userId, questionId)`
+
+Worker: `lib/solution-review.ts` `processSolutionReview(jobId)` — runs Cerebras with structured output (correctness, complexity, edge cases, explanation, follow-ups, suggestions); retries with exponential backoff (2s, 8s, 30s).
+
+Lifecycle: created by `POST /api/solution-review`, scheduled via `next/server` `after()`, polled by client via `GET /api/solution-review`.
+
+### InterviewSession (Mock Interview Room)
+Tracks solo mock interview sessions with timed, randomly-selected questions.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `userId` | String | FK → User (cascade delete) |
+| `questionId` | String | FK → Question (cascade delete) |
+| `startedAt` | DateTime | Auto-set to `now()` on creation |
+| `endedAt` | DateTime? | Set when completed or cancelled |
+| `duration` | Int? | Duration in seconds (set from user's choice at start) |
+| `status` | String | `"in_progress" \| "completed" \| "cancelled"` (default `"in_progress"`) |
+| `rating` | Int? | 1-5 self-rating submitted after completion |
+| `notes` | String? | Scratch notes taken during the interview |
+| `reflection` | String? | Post-interview reflection text |
+| `createdAt` | DateTime | Auto-set |
+| `updatedAt` | DateTime | Auto-set |
+
+Index: `(userId, status)`
+
+Lifecycle:
+1. Created by [[actions#actionsinterviewts]] `startInterview()` with `status: "in_progress"`
+2. Updated by `completeInterview()` (sets `status: "completed"`, `endedAt`, `rating`, `notes`, `reflection`)
+3. Updated by `cancelInterview()` (sets `status: "cancelled"`, `endedAt`)
+4. Read by `getInterviewHistory()` (ordered by `startedAt` desc, max 50)
 
 ### Verification
 Better Auth verification model (email verification). See [[configuration#better-auth]].

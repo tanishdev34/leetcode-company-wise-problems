@@ -15,8 +15,9 @@ leetcode-extension/
 ├── wxt.config.ts           # WXT configuration (host_permissions, etc.)
 ├── package.json
 ├── entrypoints/
-│   ├── background.ts       # Background service worker (auth, GraphQL, API, user profile, LC stats, recommendations, quotes)
+│   ├── background.ts       # Background service worker (auth, GraphQL, API, user profile, LC stats, recommendations, quotes, overlay data, toggle solved)
 │   ├── content.ts          # Content script (button injection, data extraction)
+│   ├── overlay-content.ts  # Content script (floating overlay pill on problem pages)
 │   └── popup/
 │       ├── index.html      # Popup entry HTML
 │       ├── App.tsx         # React popup component (auth UI + LC stats dashboard + quotes)
@@ -78,6 +79,20 @@ The background script handles authentication, GraphQL queries, API calls, user p
 | `GET_LEETCODE_STATS` | Popup | Fetches LeetCode stats for the linked username via [[actions#get-leetcode-stats]] — returns `{ success, stats }` (includes solved counts + contest rating) |
 | `GET_RECOMMENDED_QUESTION` | Popup | Fetches a recommended question via `GET /api/questions/recommend` — returns `{ success, question: { title, leetcodeUrl, difficulty, topics } }` |
 | `FETCH_QUOTE` | Popup | Fetches a random quote from zenquotes.io — returns `{ success, text, author }` |
+| `GET_OVERLAY_DATA` | Overlay | Fetches overlay data via `GET /api/question/overlay?slug=...` — returns `{ success, data: OverlayData }` |
+| `TOGGLE_SOLVED` | Overlay | Toggles solved status via `POST /api/questions/toggle-solved` — returns `{ success, data: { solved, solvedAt } }` |
+
+## Overlay Content Script
+
+**`entrypoints/overlay-content.ts`** — an inline overlay that appears on LeetCode problem pages (`https://leetcode.com/problems/*`). It creates a floating pill/badge at the bottom-left of the page showing the solved status. Clicking the pill expands a panel with:
+
+- Solved status with a toggle button (mark solved/unsolved)
+- Company frequency table (company name + frequency percentage)
+- Review status (due for review or up to date, with review count)
+- Notes preview (first 100 characters)
+- "View in Tracker" link
+
+The overlay uses Shadow DOM for complete style isolation from LeetCode's CSS. Communication with the app's API goes through the background worker (`GET_OVERLAY_DATA` and `TOGGLE_SOLVED` messages) to avoid CORS issues.
 
 ## Data Flow
 

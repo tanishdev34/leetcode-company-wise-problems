@@ -2,6 +2,60 @@
 
 > **See also:** [[pages]] | [[actions]] | [[architecture]]
 
+## New Components (v2 — May 2026)
+
+```
+Interview Room (/interview)                  [[pages]]
+└── InterviewRoom                            [[components#interview-room]]
+    ├── Setup phase
+    │   ├── Difficulty select (Easy/Medium/Hard/Random)
+    │   └── Duration select (15/30/45/60 min)
+    ├── Interview phase
+    │   ├── Countdown timer (urgent when < 5 min)
+    │   ├── Question card (title, difficulty, topics, LeetCode link)
+    │   ├── Notes textarea
+    │   └── Complete/Cancel buttons
+    ├── Rating phase
+    │   ├── 1-5 star self-rating
+    │   └── Reflection textarea
+    ├── Recap phase
+    │   ├── Session summary (question, duration, rating)
+    │   └── Recent history preview
+    └── History (always visible in setup)
+        └── Past session list with status/duration/rating
+```
+
+```
+Planner (/planner)                         [[pages]]
+└── StudyPlanner                           [[components#studyplanner]]
+    ├── Plan list (sidebar card)
+    │   └── Plan cards → select → show detail
+    └── Plan detail view
+        ├── Day sections (Sunday–Saturday)
+        │   ├── Add Question button → Dialog with search
+        │   └── Question items with checkbox + delete
+        └── Delete plan button
+
+Reviews (/reviews)                         [[pages]]
+└── ReviewQueue                            [[components#reviewqueue]]
+    ├── Stats cards (due, total, up-to-date)
+    ├── Progress bar
+    └── Review card
+        ├── Question title + difficulty + review count
+        └── Confidence buttons (1–5)
+
+Readiness (/readiness)                     [[pages]]
+└── ReadinessScores                        [[components#readinessscores]]
+    ├── Overall score card (Progress bar)
+    └── Company list
+        └── Per-company cards → link to /companies/[slug]
+
+Global (all pages)
+└── CommandPalette (in Navbar)             [[components#commandpalette]]
+    ├── Cmd+K / Ctrl+K trigger button
+    └── CommandDialog with search + page items
+```
+
 ## Component Tree
 
 ```
@@ -69,7 +123,7 @@ Question Detail (/questions/[id])      [[pages]]
 ### Layout
 | Component | File | Props | Used On | Notes |
 |-----------|------|-------|---------|-------|
-| `Navbar` | `navbar.tsx` | — | All [[pages#main-group-main]] routes | Uses `useSession()`, renders auth buttons/nav |
+| `Navbar` | `navbar.tsx` | — | All [[pages#main-group-main]] routes | Uses `useSession()`, renders auth buttons/nav. Desktop authenticated nav omits the top-nav search input, uses `min-w-0` flex slots, and keeps links/actions in an internal `overflow-x-auto` rail so long nav labels remain contained on narrower viewports. |
 | `ThemeProvider` | `theme-provider.tsx` | `children` | Root layout | next-themes wrapper |
 | `LoadingBar` | `loading-bar.tsx` | — | All routes | Top loading progress bar |
 
@@ -128,6 +182,67 @@ Question Detail (/questions/[id])      [[pages]]
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `AdminQuestionsForm` | `admin-questions-form.tsx` | — | [[pages#admin-adminquestions]] | [[actions#admints]] |
+
+### Study Planner
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `StudyPlanner` | `study-planner.tsx` | — | [[pages]] `/planner` | [[actions#studyplanner]] `getStudyPlans()`, `getStudyPlanDetail()`, `createStudyPlan()`, `addPlanItem()`, `updatePlanItemStatus()`, `removePlanItem()`, `deleteStudyPlan()`, `searchQuestionsForPlan()` |
+
+### Offline Banner
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `OfflineBanner` | `offline-banner.tsx` | — | Global (root layout) | `navigator.onLine` + `online`/`offline` events |
+
+**States:**
+- **Online:** renders nothing
+- **Offline:** fixed bottom-right amber toast: "Offline — showing cached data" with pulsing dot
+
+### Review Queue
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `ReviewQueue` | `review-queue.tsx` | — | [[pages]] `/reviews` | [[actions#reviewts]] `getDueReviews()`, `getReviewStats()`, `scheduleReview()`, [[architecture#libofflinets]] `cacheReviews()`, `getCachedReviews()` (offline fallback) |
+
+**Offline behavior:** When `getDueReviews()` fails and `navigator.onLine` is `false`, the component loads cached reviews from IndexedDB via `getCachedReviews()` and shows an inline "Offline — showing cached data" indicator with the last-synced timestamp.
+
+### Readiness Scores
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `ReadinessScores` | `readiness-scores.tsx` | — | [[pages]] `/readiness` | [[actions#readinessts]] `getReadinessScores()` |
+
+### Command Palette
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `CommandPalette` | `command-palette.tsx` | `isAdmin?: boolean, isAuthenticated?: boolean` | [[components#layout]] Navbar | — (static page list) |
+
+### Interview Room
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `InterviewRoom` | `interview-room.tsx` | — | [[pages]] `/interview` | [[actions#actionsinterviewts]] `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()` |
+
+**Phases:**
+- **Setup:** Difficulty select (empty=Random, EASY, MEDIUM, HARD) + Duration select (15/30/45/60 min) + "Start Interview" button. History list of past sessions visible below.
+- **Interview:** Countdown timer (pulses red when < 5 min), question card with title/difficulty/topics/LeetCode link, notes textarea, Complete/Cancel buttons. Session auto-ends when timer hits 0.
+- **Rating:** 1-5 star rating + optional reflection textarea, "Save & View Recap" / "Skip" buttons.
+- **Recap:** Session summary with question title, elapsed duration, star rating, reflection text, LeetCode link, and recent history preview.
+
+**States:**
+- **Error banner:** Red card with alert icon and dismiss button (shown on top in any phase)
+- **History loading:** Centered spinner
+- **History empty:** "No interviews yet. Start your first session!"
+- **History populated:** Session cards with status badges (completed/cancelled/in_progress), difficulty badges, rating stars, dates
+
+### AI Interview Coach
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `AiInterviewCoach` | `ai-interview-coach.tsx` | `questionId: string, code: string, language: string, initialReview?: SolutionReview` | [[pages]] `/coach` | [[actions#post-apisolution-review]], [[actions#get-apisolution-review]] (polling) |
+| `AiInterviewCoachWrapper` | `app/(main)/coach/coach-wrapper.tsx` | — | [[pages]] `/coach` | [[actions#get-apisearchqpage1pagesize20]], [[actions#get-apiquestioncode]], [[actions#get-apisolution-review]] |
+
+**States:**
+- **Empty:** "Search for a question above to review your solution"
+- **No code:** "No saved code found. Save your solution code on the question page first."
+- **Loading/reviewing:** Card with spinner and "Analyzing your solution..."
+- **Error:** Red card with error message and retry suggestion
+- **Done:** Correctness badge (green/yellow/red) + Complexity cards + Explanation card + Suggestions card + Edge case tags + Expandable follow-up questions
 
 ### Animation Components (React Bits) — [[architecture#tech-stack]]
 | Component | File | Used On |

@@ -172,19 +172,52 @@ async function getLeetcodeStats(username: string) {
   return { success: false as const }
 }
 
-// ─── Quote ──────────────────────────────────────────
+// ─── Quote (F1 drivers) ─────────────────────────────
+
+const F1_QUOTES: { text: string; author: string }[] = [
+  { text: "If you no longer go for a gap that exists, you are no longer a racing driver.", author: "Ayrton Senna" },
+  { text: "I have no idols. I admire work, dedication and competence.", author: "Ayrton Senna" },
+  { text: "You commit yourself to such a level where there is no compromise. You give everything you have, absolutely everything.", author: "Ayrton Senna" },
+  { text: "Being second is to be the first of the ones who lose.", author: "Ayrton Senna" },
+  { text: "Winning is the most important. Everything is consequence of that.", author: "Ayrton Senna" },
+  { text: "I am not designed to come second or third. I am designed to win.", author: "Ayrton Senna" },
+  { text: "Still I am racing.", author: "Michael Schumacher" },
+  { text: "I always give 100% — at training, in qualifying and in a race.", author: "Michael Schumacher" },
+  { text: "When you do something nobody else does, you build the future.", author: "Michael Schumacher" },
+  { text: "You win some, you lose some. You wreck some.", author: "Dale Earnhardt" },
+  { text: "Straight roads are for fast cars, turns are for fast drivers.", author: "Colin McRae" },
+  { text: "Anything else you do in life, after racing, seems boring.", author: "Mario Andretti" },
+  { text: "If everything seems under control, you're not going fast enough.", author: "Mario Andretti" },
+  { text: "Desire is the key to motivation, but it's determination and commitment to an unrelenting pursuit of your goal that will enable you to attain the success you seek.", author: "Mario Andretti" },
+  { text: "To achieve anything in this game, you must be prepared to dabble in the boundary of disaster.", author: "Stirling Moss" },
+  { text: "I don't drive sideways for the spectators. I drive sideways because it's fast.", author: "Walter Röhrl" },
+  { text: "It's only when you go for something with all your heart and soul that you find out if it's possible.", author: "Lewis Hamilton" },
+  { text: "Anything is possible. You just have to believe in yourself and never give up.", author: "Lewis Hamilton" },
+  { text: "Pressure is a privilege.", author: "Lewis Hamilton" },
+  { text: "I always say, never settle for less than your dreams.", author: "Lewis Hamilton" },
+  { text: "I'm a perfectionist. I want to win every race.", author: "Lewis Hamilton" },
+  { text: "I never look back, I always look forward.", author: "Niki Lauda" },
+  { text: "The best driver is the one who is fastest, and the safest.", author: "Niki Lauda" },
+  { text: "Two laps in the lead is the same as one lap in the lead.", author: "Niki Lauda" },
+  { text: "Don't compare yourself to others. Be your own benchmark.", author: "Sebastian Vettel" },
+  { text: "I love what I do. Sometimes you have ups and downs but I never lose passion.", author: "Sebastian Vettel" },
+  { text: "Smooth is fast.", author: "Jackie Stewart" },
+  { text: "In racing, there are always things you can learn, every single day.", author: "Fernando Alonso" },
+  { text: "I want to win, I want to fight for the championship. Nothing else matters.", author: "Fernando Alonso" },
+  { text: "Mentality is everything. The body follows the mind.", author: "Fernando Alonso" },
+  { text: "There is no comfort in the growth zone, and no growth in the comfort zone.", author: "Daniel Ricciardo" },
+  { text: "If you're not first, you're last.", author: "Ricky Bobby" },
+  { text: "It's important never to give up. Stay focused on your dream.", author: "Max Verstappen" },
+  { text: "You only get one shot, so you have to make it count.", author: "Max Verstappen" },
+  { text: "I always push to the limit. That's what racing is about.", author: "Max Verstappen" },
+  { text: "When you're racing, it's life. Anything before or after is just waiting.", author: "Steve McQueen" },
+  { text: "The cars we drive say a lot about us.", author: "Alexandra Paul" },
+  { text: "Without a sense of urgency, desire loses its value.", author: "Jim Rohn (paraphrased in paddock)" },
+]
 
 async function fetchQuote() {
-  try {
-    const res = await fetch('https://zenquotes.io/api/random')
-    if (res.ok) {
-      const data = await res.json()
-      if (data?.[0]?.q && data?.[0]?.a) {
-        return { success: true as const, text: data[0].q, author: data[0].a }
-      }
-    }
-  } catch { /* ignore */ }
-  return { success: false as const }
+  const q = F1_QUOTES[Math.floor(Math.random() * F1_QUOTES.length)]
+  return { success: true as const, text: q.text, author: q.author }
 }
 
 // ─── Recommended Question ───────────────────────────
@@ -210,6 +243,55 @@ async function getTodayCount() {
 async function incrementTodayCount() {
   const stored = Number(await storage.getItem('local:todayCount')) || 0
   await storage.setItem('local:todayCount', String(stored + 1))
+}
+
+// ─── Overlay Data ─────────────────────────────────
+
+interface OverlayData {
+  title: string
+  difficulty: string
+  solved: boolean
+  solvedAt: string | null
+  companies: { name: string; frequency: number }[]
+  reviewDue: boolean
+  reviewCount: number
+  notes: string | null
+  questionId: string
+}
+
+async function getOverlayData(slug: string) {
+  try {
+    const res = await fetch(`${APP_URL}/api/question/overlay?slug=${slug}`, { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      return data as { success: boolean; data: OverlayData }
+    }
+    const body = await res.text().catch(() => '')
+    return { success: false as const, error: `Server returned ${res.status}${body ? ': ' + body.slice(0, 100) : ''}` }
+  } catch {
+    return { success: false as const, error: 'Network error: cannot reach app' }
+  }
+}
+
+// ─── Toggle Solved ────────────────────────────────
+
+async function toggleSolved(questionId: string, slug: string) {
+  try {
+    const res = await fetch(`${APP_URL}/api/questions/toggle-solved`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ questionId, slug }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return { success: true as const, ...data }
+    }
+    const body = await res.text().catch(() => '')
+    return { success: false as const, error: `Server returned ${res.status}${body ? ': ' + body.slice(0, 100) : ''}` }
+  } catch {
+    return { success: false as const, error: 'Network error: cannot reach app' }
+  }
 }
 
 // ─── Message Router ────────────────────────────────
@@ -252,6 +334,12 @@ export default defineBackground(() => {
             break
           case 'FETCH_QUOTE':
             sendResponse(await fetchQuote())
+            break
+          case 'GET_OVERLAY_DATA':
+            sendResponse(await getOverlayData(message.slug))
+            break
+          case 'TOGGLE_SOLVED':
+            sendResponse(await toggleSolved(message.questionId, message.slug))
             break
           default:
             sendResponse({ success: false, error: 'Unknown action' })

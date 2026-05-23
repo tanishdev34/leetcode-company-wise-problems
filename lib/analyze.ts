@@ -31,7 +31,7 @@ async function runAnalysis(code: string, language: string) {
   })
 
   const { output } = await generateText({
-    model: cerebras("qwen-3-235b-a22b-instruct-2507"),
+    model: cerebras("zai-glm-4.7"),
     output: Output.object({ schema }),
     prompt: `You are a LeetCode solution analyzer. Analyze the following ${language} code and fill the structured output fields.
 
@@ -110,10 +110,7 @@ export async function processAnalysisJob(jobId: string): Promise<void> {
       return
     } catch (err) {
       lastError = err
-      console.error(
-        `analyzeJob ${jobId} attempt ${attempt + 1} failed:`,
-        err
-      )
+      console.error(`analyzeJob ${jobId} attempt ${attempt + 1} failed:`, err)
 
       const isLast = attempt + 1 >= job.maxAttempts
       await prisma.analysisJob.update({
@@ -126,7 +123,8 @@ export async function processAnalysisJob(jobId: string): Promise<void> {
       })
 
       if (isLast) return
-      const delay = RETRY_DELAYS_MS[attempt] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1]
+      const delay =
+        RETRY_DELAYS_MS[attempt] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1]
       await sleep(delay)
     }
   }

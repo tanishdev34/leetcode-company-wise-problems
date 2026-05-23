@@ -2,6 +2,8 @@
 
 A web app for tracking LeetCode problems organized by company. Browse questions by company and time period, mark problems as solved, write markdown notes, search with fuzzy matching, and view progress stats.
 
+For future feature ideas and learning-oriented roadmap options, see [`FEATURES.md`](../../FEATURES.md).
+
 ## Page Catalog
 
 | Page | Summary | Key Links To |
@@ -16,6 +18,61 @@ A web app for tracking LeetCode problems organized by company. Browse questions 
 | [[extension]] | Browser extension — Chrome/Edge Manifest V3, data extraction, setup, LC stats | [[actions#post-apiextensionadd-solution]], [[data-model]] |
 
 ## Changelog
+
+### [2026-05-23] Navbar overflow fix
+- **Navbar** — desktop authenticated navigation now reserves the row for navigation/actions only, removing the collapsible top-nav search slot that could overlap `+ Add Questions`. The signed-in link rail uses shrinkable flex constraints plus internal horizontal scrolling so recently added links (`Readiness`, `Coach`, `Interview`, `Codeforces`) stay inside the viewport. See [[components#layout]].
+- **Regression test** — added `tests/components/navbar.test.tsx` to verify the authenticated desktop nav omits the top-nav search input and keeps `min-w-0` + `overflow-x-auto` layout constraints.
+
+### [2026-05-23] Mock Interview Room (Feature 10)
+- **Mock Interview Room** — new `/interview` page with `InterviewRoom` component for timed solo practice sessions. See [[components#interview-room]].
+- **`InterviewSession` model** — new Prisma model tracking session state (`in_progress`/`completed`/`cancelled`) with duration, rating, notes, and reflection. See [[data-model#interviewsession]].
+- **`actions/interview.ts`** — server actions for interview lifecycle: `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()`. See [[actions#actionsinterviewts]].
+- **Setup phase** — user selects difficulty (Easy/Medium/Hard/Random) and duration (15/30/45/60 min).
+- **Interview phase** — countdown timer (visual urgency when < 5 min), question info with LeetCode link, notes textarea, Complete/Cancel buttons.
+- **Rating phase** — 1-5 star self-rating + reflection textarea after completing the session.
+- **Recap phase** — session summary with duration, rating, reflection, question link, and recent history.
+- **History** — list of past sessions with status badges, ratings, and durations.
+- **Navbar** — "Interview" link added in desktop and mobile nav (before Codeforces).
+- **Command palette** — "Mock Interview Room" entry with Play icon added.
+- **Middleware** — `/interview` added to protected routes and matcher.
+
+### [2026-05-23] Offline Review Mode (Feature 9)
+- **PWA Service Worker** — `public/sw.js` caches static pages on install, uses Cache-First strategy for review/question/stats API responses, and serves cached content when offline. See [[architecture#pwa--offline-support]].
+- **PWA Manifest** — `public/manifest.json` enables standalone mode with dark theme colors. Linked in [[pages]] root layout.
+- **`lib/offline.ts`** — Client-only IndexedDB utility wrapping `idb-keyval` for caching reviews, notes, and sync timestamps. Exports `cacheReviews()`, `getCachedReviews()`, `cacheNotes()`, `getCachedNote()`, `clearOfflineCache()`, `isOnline()`, and `onOnlineChange()`. See [[architecture#libofflinets]].
+- **`OfflineBanner`** — Fixed bottom-right toast showing "Offline — showing cached data" with pulsing amber dot. Appears on any page when the browser goes offline. See [[components#offline-banner]].
+- **`ReviewQueue` offline support** — On fetch failure (offline), loads reviews from IndexedDB cache and displays an inline offline indicator with last-sync timestamp. See [[components#reviewqueue]].
+- **`next.config.mjs` headers** — `sw.js` gets `Service-Worker-Allowed: /` header; `manifest.json` gets caching headers.
+- **Dependency** — `idb-keyval` added for IndexedDB access.
+
+### [2026-05-23] AI Interview Coach (Feature 6)
+- **AI Interview Coach** — new `/coach` page with `AiInterviewCoach` component that analyzes saved code and returns structured interview-style feedback on correctness, complexity, edge cases, explanation quality, follow-up questions, and improvement suggestions. Uses Cerebras via AI SDK with structured output.
+- **`SolutionReview` model** — new Prisma model tracking review job state (`pending`/`running`/`done`/`error`) with fields for structured AI output. See [[data-model#solutionreview]].
+- **`lib/solution-review.ts`** — background worker with retry/backoff (similar to `lib/analyze.ts`) that processes reviews via Cerebras.
+- **`POST/GET /api/solution-review`** — enqueue and poll endpoints for solution reviews. See [[actions#post-apisolution-review]].
+- **`GET /api/question/code`** — API route returning the authenticated user's saved code for a question. See [[actions#get-apiquestioncode]].
+- **`enqueueSolutionReview(questionId)`** — server action in `actions/questions.ts` to enqueue a review. See [[actions#actionsquestionsts]].
+- **Navbar** — "Coach" link added in desktop and mobile nav.
+- **Command palette** — "AI Interview Coach" entry added.
+- **Middleware** — `/coach` added to protected routes and matcher.
+
+### [2026-05-23] Extension inline overlay
+- **Extension Overlay** — floating pill on LeetCode problem pages showing solved status, company frequency, review status, notes preview, and quick toggle solved. Uses Shadow DOM for style isolation. See [[extension#overlay-content-script]].
+- **`GET /api/question/overlay`** — API route returning overlay data (public + optional authenticated fields).
+- **`POST /api/questions/toggle-solved`** — API route for toggling solved status from the extension.
+- Background worker handles `GET_OVERLAY_DATA` and `TOGGLE_SOLVED` messages.
+
+### [2026-05-23] Top 5 features implemented
+- **Command Palette** — `cmdk`-based keyboard-driven navigation (`Cmd+K`/`Ctrl+K`) for all pages. See [[components#command-palette]].
+- **Notes Templates** — Three structured templates in `NoteEditor`: Pattern/Intuition/Complexity/Mistakes, Brute Force→Optimal, Interview Explanation. See [[components#questions]].
+- **Study Planner** — Weekly study plans with `StudyPlan` + `StudyPlanItem` models, day-by-day question assignment with search, completion tracking. See [[data-model#studyplan]] and [[pages]] `/planner`.
+- **Spaced Repetition Review Queue** — `ReviewItem` model with confidence-based intervals (1d/2d/4d/7d/14d), auto-scheduled on solve, review session UI. See [[data-model#reviewitem]] and [[pages]] `/reviews`.
+- **Interview Readiness Score** — Per-company readiness scoring (solved ratio 0-40, difficulty coverage 0-20, recency 0-20, review freshness 0-20). See [[actions#readinessts]] and [[pages]] `/readiness`.
+
+### [2026-05-21] Learning-oriented feature roadmap
+
+- Created [`FEATURES.md`](../../FEATURES.md) as a root-level roadmap for skill-building feature ideas across UI/UX polish, analytics, AI, browser extension work, mobile/PWA features, backend systems, testing, observability, and collaboration.
+- The roadmap includes recommended build order, suggested libraries, difficulty levels, and the engineering skills each feature is meant to practice.
 
 ### [2026-05-16] Email + extension visual refresh
 - **Emails** — rewrote `emails/daily-question.tsx` and `emails/contest-reminder.tsx` with gradient hero panels (indigo→fuchsia for daily, amber→rose→magenta for contest), date badge column, motivational quote card (seeded per-day/per-contest from a curated pool), brand wordmark header. `daily-question` now accepts an optional `streak` prop.

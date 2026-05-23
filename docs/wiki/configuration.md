@@ -39,7 +39,7 @@ CRON_SECRET=development
 
 | File | Purpose | Used By |
 |------|---------|---------|
-| `next.config.mjs` | Next.js config (image domains, redirects, etc.) | [[architecture]] |
+| `next.config.mjs` | Next.js config (headers for service worker + PWA manifest) | [[architecture#pwa--offline-support]] |
 | `tsconfig.json` | TypeScript config — path aliases (`@/` → `./`) | [[conventions#imports]] |
 | `tailwind.config.ts` | Tailwind CSS v4 config | [[conventions#styling]] |
 | `postcss.config.mjs` | PostCSS config (Tailwind, autoprefixer) | [[architecture]] |

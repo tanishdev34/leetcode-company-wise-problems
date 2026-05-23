@@ -19,11 +19,12 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | `getCompanies()` | No | — | `{ companies[], totalQuestions, totalCompanies }` | [[pages#companies-list-companies]] | No |
 | `getCompanyQuestions(slug, timePeriod, page, pageSize)` | No | `slug: string, timePeriod: TimePeriod, page: number, pageSize?: number` | `{ questions[], totalPages, currentPage }` | [[pages#company-detail-companiesslug]] | No |
 | `getQuestionDetail(questionId)` | No | `questionId: string` | `{ id, title, leetcodeUrl, difficulty, topics, frequency, acceptanceRate, companies[], solved, solvedAt, notes, code, language, hints }` | [[pages]] `/questions/[id]` | No |
-| `toggleSolved(questionId)` | Yes | `questionId: string` | `{ solved: boolean, solvedAt: Date \| null }` | [[components#questions]] `QuestionRow` checkbox, [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
+| `toggleSolved(questionId)` | Yes | `questionId: string` | `{ solved: boolean, solvedAt: Date \| null }` | [[components#questions]] `QuestionRow` checkbox, [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]]. Auto-schedules a [[data-model#reviewitem]] via [[actions#reviewts]] `autoScheduleAfterSolve()` when becoming solved. |
 | `saveNotes(questionId, markdown)` | Yes | `questionId, markdown (max 10k chars)` | `{ success: true }` | [[components#questions]] `NoteEditor` | Yes — [[data-model#userquestion-user-progress]] |
 | `saveCode(questionId, code, language?)` | Yes | `questionId, code (max 50k chars), language?` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `saveHints(questionId, hints)` | Yes | `questionId, hints (max 10k chars)` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `getNotes(questionId)` | Yes | `questionId` | `{ notes, code, language, hints }` | [[components#questions]] `QuestionDetail` | No |
+| `enqueueSolutionReview(questionId)` | Yes | `questionId: string` | `{ jobId, status }` | [[components#aiinterviewcoach]] `AiInterviewCoach` | Yes — creates [[data-model#solutionreview]] |
 
 ### `actions/stats.ts` — [[data-model#userquestion-user-progress]], [[data-model#question]]
 
@@ -49,6 +50,44 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | Action | Auth | Params | Returns | Called By | Mutates |
 |--------|------|--------|---------|-----------|---------|
 | `saveCodeforcesUsername(username)` | Yes | `username: string` | `{ success: true }` | [[components#codeforces]] `CodeforcesUsernameForm` on [[pages#dashboard-dashboard]] and [[pages#codeforces-codeforces]] | Yes — updates [[data-model#user]] `codeforcesUsername` |
+
+### `actions/study-planner.ts` — [[data-model#studyplan]], [[data-model#studyplanitem]]
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `createStudyPlan(name, weekStart)` | Yes | `name: string, weekStart: ISO date` | `{ id, name, weekStart }` | [[components#studyplanner]] | Yes — creates [[data-model#studyplan]] |
+| `getStudyPlans()` | Yes | — | `{ plans: [{ id, name, weekStart, itemCount, completedCount, createdAt }] }` | [[components#studyplanner]] | No |
+| `getStudyPlanDetail(planId)` | Yes | `planId: string` | `{ id, name, weekStart, items[] }` | [[components#studyplanner]] | No |
+| `addPlanItem(planId, questionId, dayOfWeek)` | Yes | `planId, questionId, dayOfWeek: 0-6` | `{ id }` | [[components#studyplanner]] | Yes — creates [[data-model#studyplanitem]] |
+| `updatePlanItemStatus(itemId, status)` | Yes | `itemId, status: string` | `{ success: true }` | [[components#studyplanner]] | Yes — updates [[data-model#studyplanitem]] |
+| `removePlanItem(itemId)` | Yes | `itemId: string` | `{ success: true }` | [[components#studyplanner]] | Yes — deletes [[data-model#studyplanitem]] |
+| `deleteStudyPlan(planId)` | Yes | `planId: string` | `{ success: true }` | [[components#studyplanner]] | Yes — deletes [[data-model#studyplan]] |
+| `searchQuestionsForPlan(query)` | Yes | `query: string` | `{ questions: [{ id, title, difficulty, leetcodeUrl }] }` | [[components#studyplanner]] | No |
+
+### `actions/review.ts` — [[data-model#reviewitem]]
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `scheduleReview(questionId, confidence)` | Yes | `questionId, confidence: 1-5` | `{ nextReviewAt }` | [[components#reviewqueue]], [[actions#toggleSolved]] | Yes — creates/updates [[data-model#reviewitem]] |
+| `getDueReviews()` | Yes | — | `{ items: [{ id, questionId, questionTitle, leetcodeUrl, difficulty, confidence, reviewCount, lastReviewedAt, nextReviewAt }] }` | [[components#reviewqueue]] | No |
+| `getReviewStats()` | Yes | — | `{ dueCount, totalCount, nextReview }` | [[components#reviewqueue]] | No |
+| `autoScheduleAfterSolve(questionId)` | Yes | `questionId: string` | `{ nextReviewAt }` | [[actions#toggleSolved]] | Yes — auto-schedules with confidence 3 |
+
+### `actions/readiness.ts` — Derived-only (no new models)
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `getReadinessScores()` | Yes | — | `{ companies[], overallScore, totalSolved, totalQuestions }` | [[components#readinessscores]] | No |
+
+### `actions/interview.ts` — [[data-model#interviewsession]]
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `startInterview(questionId, durationMinutes?)` | Yes | `questionId: string, durationMinutes?: number` (default 45) | `{ id, startedAt }` | [[components#interview-room]] `InterviewRoom` | Yes — creates [[data-model#interviewsession]] |
+| `completeInterview(id, data)` | Yes | `id: string, data: { rating?, notes?, reflection? }` | `{ success: true }` | [[components#interview-room]] `InterviewRoom` | Yes — updates [[data-model#interviewsession]] |
+| `cancelInterview(id)` | Yes | `id: string` | `{ success: true }` | [[components#interview-room]] `InterviewRoom` | Yes — updates [[data-model#interviewsession]] |
+| `getInterviewHistory()` | Yes | — | `{ sessions: [...] }` with question details | [[components#interview-room]] `InterviewRoom` | No |
+| `getRandomQuestion(difficulty?)` | Yes | `difficulty?: "EASY" \| "MEDIUM" \| "HARD"` | `{ id, title, leetcodeUrl, difficulty, topics }` | [[components#interview-room]] `InterviewRoom` | No |
 
 ### `actions/email.ts` — [[data-model#user]]
 
@@ -152,6 +191,46 @@ Returns the latest analysis job for the current user + question.
 - Auth required
 - Returns: `{ job: { id, status, attempts, maxAttempts, error, updatedAt } | null }`
 - Called by: [[components#questions]] `NoteEditor` (on mount + while polling).
+
+### `GET /api/question/overlay?slug=`
+Returns overlay summary data for a question by its URL slug.
+- Auth: optional — if authenticated, includes personal data (solved status, review info, notes)
+- Returns: `{ success, data: { title, difficulty, solved, solvedAt, companies: [{name, frequency}], reviewDue, reviewCount, notes, questionId } }`
+- Called by: [[extension]] overlay content script (via background worker `GET_OVERLAY_DATA`)
+
+### `POST /api/solution-review`
+Enqueues an AI solution review job and returns immediately.
+- Auth required
+- Body: `{ questionId: string, code: string, language?: string }`
+- Creates a [[data-model#solutionreview]] row with `status: "pending"`, schedules `processSolutionReview(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
+- If a `pending`/`running` review already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
+- The background worker (`lib/solution-review.ts`) calls Cerebras with structured output (correctness, time/space complexity, edge cases, explanation, follow-ups, suggestions) and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- Called by: [[components#aiinterviewcoach]] `AiInterviewCoach` "Review My Solution" button.
+
+### `GET /api/solution-review?jobId=`
+Polls a specific solution review job for the current user.
+- Auth required
+- Returns: `{ job: { id, status, correctness, timeComplexity, spaceComplexity, edgeCases, explanation, followUps, suggestions, error, code, language, attempts, maxAttempts, createdAt, updatedAt } | null }`
+- Called by: [[components#aiinterviewcoach]] `AiInterviewCoach` (polling after enqueue).
+
+### `GET /api/solution-review?questionId=`
+Returns the latest solution review job for the current user + question.
+- Auth required
+- Returns: same as above
+- Called by: [[components#aiinterviewcoach]] `AiInterviewCoachWrapper` (on question select).
+
+### `GET /api/question/code?questionId=`
+Returns the authenticated user's saved code for a question.
+- Auth required
+- Returns: `{ code: string, language: string }`
+- Called by: [[components#aiinterviewcoach]] `AiInterviewCoachWrapper` (to fetch code for review).
+
+### `POST /api/questions/toggle-solved`
+Toggles the solved status of a question for the current user.
+- Auth required
+- Body: `{ questionId: string }`
+- Returns: `{ success, data: { solved, solvedAt } }`
+- Called by: [[extension]] overlay content script (via background worker `TOGGLE_SOLVED`)
 
 ### `GET|POST /api/auth/[...all]`
 Better Auth handler — sessions, login, register, OAuth callbacks. See [[configuration#better-auth]].

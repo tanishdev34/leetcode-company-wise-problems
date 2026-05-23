@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { TimePeriod } from "../generated/prisma/client"
+import { autoScheduleAfterSolve } from "./review"
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -279,13 +280,18 @@ export async function toggleSolved(
     })
 
     if (existing) {
+      const becomingSolved = !existing.solved
       const updated = await prisma.userQuestion.update({
         where: { id: existing.id },
         data: {
-          solved: !existing.solved,
-          solvedAt: !existing.solved ? new Date() : null,
+          solved: becomingSolved,
+          solvedAt: becomingSolved ? new Date() : null,
         },
       })
+      // Auto-schedule review when becoming solved
+      if (becomingSolved) {
+        await autoScheduleAfterSolve(questionId)
+      }
       return {
         success: true,
         data: { solved: updated.solved, solvedAt: updated.solvedAt },
@@ -295,6 +301,8 @@ export async function toggleSolved(
     const created = await prisma.userQuestion.create({
       data: { userId, questionId, solved: true, solvedAt: new Date() },
     })
+    // Auto-schedule initial review
+    await autoScheduleAfterSolve(questionId)
     return {
       success: true,
       data: { solved: created.solved, solvedAt: created.solvedAt },
@@ -371,6 +379,61 @@ export async function getNotes(
     }
   } catch {
     return { success: false, error: "Failed to fetch notes" }
+  }
+}
+
+export async function enqueueSolutionReview(
+  questionId: string
+): Promise<ActionResult<{ jobId: string; status: string }>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return { success: false, error: "Not authenticated" }
+
+    // Get the user's code for this question
+    const uq = await prisma.userQuestion.findUnique({
+      where: { userId_questionId: { userId: session.user.id, questionId } },
+      select: { code: true, language: true },
+    })
+
+    if (!uq?.code?.trim()) {
+      return { success: false, error: "No saved code to review. Save your code first." }
+    }
+
+    // Check for existing active review
+    const existingActive = await prisma.solutionReview.findFirst({
+      where: {
+        userId: session.user.id,
+        questionId,
+        status: { in: ["pending", "running"] },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+    if (existingActive) {
+      return {
+        success: true,
+        data: { jobId: existingActive.id, status: existingActive.status },
+      }
+    }
+
+    const job = await prisma.solutionReview.create({
+      data: {
+        userId: session.user.id,
+        questionId,
+        code: uq.code,
+        language: uq.language || "cpp",
+        status: "pending",
+      },
+    })
+
+    // Fire and forget the processing
+    const { processSolutionReview } = await import("@/lib/solution-review")
+    processSolutionReview(job.id).catch((err) =>
+      console.error("processSolutionReview failed:", err)
+    )
+
+    return { success: true, data: { jobId: job.id, status: "pending" } }
+  } catch {
+    return { success: false, error: "Failed to enqueue solution review" }
   }
 }
 

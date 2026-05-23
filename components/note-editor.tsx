@@ -151,6 +151,73 @@ interface NoteEditorProps {
   isAdmin?: boolean;
 }
 
+const NOTES_TEMPLATES = [
+  {
+    label: "Pattern / Intuition / Complexity / Mistakes",
+    value: `## Pattern
+
+What pattern does this problem follow? (e.g., sliding window, two pointers, DP, BFS, etc.)
+
+## Intuition
+
+Explain the key insight that led to the solution.
+
+## Complexity
+
+- **Time Complexity:**
+- **Space Complexity:**
+
+## Mistakes
+
+What mistakes did you make or what should you watch out for?
+`,
+  },
+  {
+    label: "Brute Force → Optimal",
+    value: `## Brute Force Approach
+
+Describe the naive solution.
+
+- **Time:**
+- **Space:**
+
+## Optimization
+
+How did you improve it?
+
+## Optimal Solution
+
+- **Time:**
+- **Space:**
+
+## Key Takeaways
+
+`,
+  },
+  {
+    label: "Interview Explanation",
+    value: `## Problem Understanding
+
+Restate the problem in your own words.
+
+## Approach
+
+Explain your thought process out loud.
+
+## Edge Cases
+
+- 
+- 
+- 
+
+## Follow-up Questions
+
+- How would you handle larger inputs?
+- Could this be solved differently?
+`,
+  },
+];
+
 const LANGUAGES = [
   { value: "cpp", label: "C++" },
   { value: "python", label: "Python" },
@@ -614,17 +681,35 @@ export function NoteEditor({
                 </Button>
               </div>
               {notesEditMode ? (
-                <Textarea
-                  value={notes}
-                  onChange={handleNotesChange}
-                  onBlur={() => {
-                    if (debounceRef.current) clearTimeout(debounceRef.current);
-                    doSaveNotes(notes);
-                  }}
-                  placeholder="Write your notes here (markdown supported)..."
-                  rows={8}
-                  maxLength={10000}
-                />
+                <>
+                  {/* Template buttons */}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    <span className="text-xs text-muted-foreground mr-1 self-center">Templates:</span>
+                    {NOTES_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.label}
+                        type="button"
+                        onClick={() => {
+                          setNotes((prev) => (prev ? `${prev}\n\n${tpl.value}` : tpl.value));
+                        }}
+                        className="text-xs px-2 py-1 rounded-md border border-border bg-muted/30 hover:bg-muted hover:text-foreground text-muted-foreground transition-colors"
+                      >
+                        {tpl.label}
+                      </button>
+                    ))}
+                  </div>
+                  <Textarea
+                    value={notes}
+                    onChange={handleNotesChange}
+                    onBlur={() => {
+                      if (debounceRef.current) clearTimeout(debounceRef.current);
+                      doSaveNotes(notes);
+                    }}
+                    placeholder="Write your notes here (markdown supported)..."
+                    rows={8}
+                    maxLength={10000}
+                  />
+                </>
               ) : (
                 <div className="rounded-md border p-4 min-h-[120px]">
                   <div className="prose prose-sm dark:prose-invert max-w-none">

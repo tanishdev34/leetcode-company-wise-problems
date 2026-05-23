@@ -24,6 +24,11 @@
 | `/stats` | `app/(main)/stats/page.tsx` | **Auth required** | [[components#dashboard]] `LeetcodeUsernameForm`, `LeetcodeStats` (solved progress, contest stats, heatmap, skills, recents) | [[actions#get-leetcode-stats]] API, [[actions#get-leetcode-calendar]] API |
 | `/codeforces` | `app/(main)/codeforces/page.tsx` | **Auth required** | [[components#codeforces]] `CodeforcesUsernameForm`, `CodeforcesProfile` (which renders `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable`) | [[actions#codeforcests]], [[actions#get-apicodeforcesuserhandle]], [[actions#get-apicodeforcesratinghandle]] |
 | `/admin/questions` | `app/(main)/admin/questions/page.tsx` | **Auth required** | [[components#admin]] `AdminQuestionsForm` | [[actions#admints]] |
+| `/planner` | `app/(main)/planner/page.tsx` | **Auth required** | [[components#studyplanner]] `StudyPlanner` | [[actions#studyplanner]] |
+| `/reviews` | `app/(main)/reviews/page.tsx` | **Auth required** | [[components#reviewqueue]] `ReviewQueue` | [[actions#reviewts]] |
+| `/readiness` | `app/(main)/readiness/page.tsx` | **Auth required** | [[components#readinessscores]] `ReadinessScores` | [[actions#readinessts]] |
+| `/coach` | `app/(main)/coach/page.tsx` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper`, `AiInterviewCoach` | [[actions#solution-review-actions]] via fetch |
+| `/interview` | `app/(main)/interview/page.tsx` | **Auth required** | [[components#interview-room]] `InterviewRoom` | [[actions#actionsinterviewts]] `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()` |
 
 ### API Routes
 
@@ -40,6 +45,8 @@
 | `GET /api/user/profile` | `app/api/user/profile/route.ts` | **Auth required** | [[extension]] background worker | Returns current user's email, leetcodeUsername, codeforcesUsername |
 | `GET /api/cron/daily-question` | `app/api/cron/daily-question/route.ts` | Cron secret | [[actions#daily-question-cron]] | Send daily LeetCode question emails |
 | `GET /api/cron/contest-reminder` | `app/api/cron/contest-reminder/route.ts` | Cron secret | [[actions#contest-reminder-cron]] | Send contest reminder emails |
+| `GET/POST /api/solution-review` | `app/api/solution-review/route.ts` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoach` | Enqueue/poll solution review jobs. See [[actions#post-apisolution-review]], [[actions#get-apisolution-review]]. |
+| `GET /api/question/code` | `app/api/question/code/route.ts` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper` | Returns authenticated user's saved code and language for a question. See [[actions#get-apiquestioncode]]. |
 | `GET/POST /api/auth/[...all]` | `app/api/auth/[...all]/route.ts` | — | [[components#auth]] `LoginForm`, `RegisterForm` | Better Auth handler |
 
 ## URL Parameter Details
@@ -63,7 +70,8 @@
 
 ## Route Protection
 
-- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, and `/codeforces` by checking for Better Auth session cookie. See [[configuration#config-files]].
+- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, `/codeforces`, `/planner`, `/reviews`, `/readiness`, `/coach`, and `/interview` by checking for Better Auth session cookie. See [[configuration#config-files]].
+- **Offline support** — The root layout registers a service worker (`/sw.js`) via `Script` tag and links `manifest.json` for PWA standalone mode. The `OfflineBanner` component shows an offline toast on any page. The `ReviewQueue` falls back to IndexedDB cache when offline. See [[architecture#pwa--offline-support]] and [[components#offline-banner]].
 - **Server components** (e.g., dashboard page) call `auth.api.getSession()` server-side and redirect if not authenticated.
 - **Server actions** call `auth.api.getSession()` and return `{ success: false, error: "Not authenticated" }`. See [[conventions#server-action-pattern]].
 - **Public routes** work without auth; solved status/notes are simply not shown.

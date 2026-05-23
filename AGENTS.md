@@ -61,7 +61,11 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 │   ├── questions.ts          # Question CRUD, toggle solved, notes
 │   ├── stats.ts              # Dashboard statistics
 │   ├── admin.ts              # Admin question import
-│   └── profile.ts            # LeetCode username save
+│   ├── profile.ts            # LeetCode username save
+│   ├── study-planner.ts      # Study plan CRUD
+│   ├── review.ts             # Spaced repetition reviews
+│   ├── readiness.ts          # Interview readiness scores
+│   └── interview.ts          # Mock interview session lifecycle
 ├── app/                      # Next.js App Router pages + API
 │   ├── (auth)/               # Login, Register
 │   ├── (main)/               # Dashboard, Companies, Search, Questions, Admin
@@ -71,7 +75,7 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 │   ├── auth/                 # Login/Register forms
 │   └── ...                   # Custom components
 ├── generated/prisma/         # Generated Prisma client (don't edit)
-├── lib/                      # Utilities (db, auth, redis, utils)
+├── lib/                      # Utilities (db, auth, redis, utils, offline)
 ├── emails/                  # React Email components (daily question, contest reminders)
 ├── docs/
 │   ├── wiki/                 # Project wiki (this)
@@ -80,6 +84,6 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 │   ├── schema.prisma         # Database schema
 │   └── seed.ts               # CSV import script
 ├── leetcode-extension/        # Browser extension
-├── public/                   # Static assets
+├── public/                   # Static assets (SW, PWA manifest)
 └── middleware.ts             # Route protection
 ```
