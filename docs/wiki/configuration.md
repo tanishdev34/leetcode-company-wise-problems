@@ -70,6 +70,12 @@ CRON_SECRET=development
 |---------|---------|---------|
 | `@xyflow/react` | Interactive node graph rendering | [[components#learning-graph]], [[components#system-map]] |
 
+## External Services
+
+| Service | Purpose | Used By | Configuration |
+|---------|---------|---------|---------------|
+| Wandbox `https://wandbox.org/api/compile.json` | Remote C++ compile/run service using GCC for playground tests | [[actions#post-apiplaygroundcpp]], [[components#code-playground]] | No env var currently; `app/api/playground/cpp/route.ts` posts directly with `compiler: "gcc-head"` and `options: "warning,gnu++20"` |
+
 ## Prisma
 
 - **Schema**: `prisma/schema.prisma` — full details in [[data-model]]

@@ -249,6 +249,15 @@ Returns the authenticated user's saved code for a question.
 - Returns: `{ code: string, language: string }`
 - Called by: [[components#aiinterviewcoach]] `AiInterviewCoachWrapper` (to fetch code for review).
 
+### `POST /api/playground/cpp`
+Compiles and runs C++ playground code against stdin/stdout tests via Wandbox.
+- Auth required
+- Body: `{ code: string, testCases: Array<{ input: string, expected: string }> }`
+- Limits code to 30,000 characters and at most 10 test cases.
+- Uses `lib/cpp-playground.ts` to wrap user `void solve()` code in a generated harness, post it to `https://wandbox.org/api/compile.json`, and normalize compiler/runtime output.
+- Returns: `{ status: "success" | "compile_error" | "runtime_error", stdout, stderr, compilerOutput, permalink? }`
+- Called by: [[components#code-playground]] `CodePlaygroundView` in C++ mode.
+
 ### `POST /api/questions/toggle-solved`
 Toggles the solved status of a question for the current user.
 - Auth required

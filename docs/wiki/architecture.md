@@ -19,6 +19,7 @@
 | **AI Interview Coach** | Crof AI (Anthropic-compatible) via AI SDK — structured interview feedback on saved code | [[actions#post-apisolution-review]], [[data-model#solutionreview]] |
 | **Email** | React Email (component-based templates) + Nodemailer (transport) | [[actions#emailts]], [[lib/email]] |
 | **PWA / Offline** | Service Worker (`public/sw.js`) + IndexedDB via `idb-keyval` (`lib/offline.ts`) | [[configuration#config-files]] `next.config.mjs` |
+| **Code Execution** | Client-side JavaScript runner + Wandbox-backed C++ compile/run endpoint | [[components#code-playground]], [[actions#post-apiplaygroundcpp]] |
 | **Package Manager** | Bun | [[configuration#package-scripts]] |
 
 ## Data Flow
@@ -77,6 +78,8 @@ app/               # Next.js App Router
     admin/         #     Admin pages → [[pages#admin-adminquestions]]
   api/             #   API routes → [[actions#api-routes]]
     auth/          #     Better Auth handler
+    playground/
+      cpp/         #     Authenticated C++ compile/run proxy via Wandbox
     search/        #     Fuzzy search
     sync/          #     LeetCode sync
     leetcode/      #     LeetCode API proxies
@@ -100,6 +103,7 @@ lib/               # Shared utilities
   learning-graph.ts # Pure graph builder for /learning
   mistake-memory.ts # Pattern builder for /memory
   code-playground.ts # JS test runner helper for /playground
+  cpp-playground.ts # C++ harness builder + Wandbox result normalization for /playground
   study-report.ts # Pure weekly study report generator
   system-map.ts   # Pure source map graph builder
   whiteboard.ts   # Whiteboard serialization helpers

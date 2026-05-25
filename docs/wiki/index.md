@@ -19,6 +19,13 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
+### [2026-05-25] C++ playground runner
+- Extended `/playground` from a JavaScript-only test pad into a language-tabbed code playground with JavaScript and C++ modes.
+- Added `lib/cpp-playground.ts` to generate a stdin/stdout C++ harness and normalize Wandbox compile/run responses.
+- Added authenticated `POST /api/playground/cpp`, which compiles and runs C++ through Wandbox using GCC, returning stdout, stderr, compiler output, and runner status.
+- Updated `CodePlaygroundView` with C++ starter code, stdin-style tests, and compiler/runtime output panels.
+- Refined the authenticated desktop navbar to remove the horizontal scrolling rail: primary links stay visible, secondary destinations move into a compact More menu, and admin/sign-out actions stay pinned on the right.
+
 ### [2026-05-25] Learning graph, study reports, and system map
 - Added `/learning` with `LearningGraphView`, `actions/learning-graph.ts`, and `lib/learning-graph.ts` to visualize topic → question → company relationships, weak/strong topic clusters, and due-review pressure using React Flow (`@xyflow/react`).
 - Added `/reports` with `StudyReportView`, `actions/study-report.ts`, and `lib/study-report.ts` to generate a weekly study report with metrics, highlights, recommendations, company focus, and topic momentum.

@@ -48,7 +48,7 @@ const PAGES = [
   { id: "learning", label: "Learning Graph", href: "/learning", icon: GitBranch, auth: true, admin: false },
   { id: "memory", label: "Mistake Memory", href: "/memory", icon: ClipboardList, auth: true, admin: false },
   { id: "reports", label: "Study Reports", href: "/reports", icon: FileText, auth: true, admin: false },
-  { id: "playground", label: "JS Test Playground", href: "/playground", icon: FlaskConical, auth: true, admin: false },
+  { id: "playground", label: "Code Playground", href: "/playground", icon: FlaskConical, auth: true, admin: false },
   { id: "whiteboard", label: "Whiteboard", href: "/whiteboard", icon: PenLine, auth: true, admin: false },
   { id: "stats", label: "Stats", href: "/stats", icon: BarChart3, auth: true, admin: false },
   { id: "codeforces", label: "Codeforces", href: "/codeforces", icon: Code, auth: true, admin: false },

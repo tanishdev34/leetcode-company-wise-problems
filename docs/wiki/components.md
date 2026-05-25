@@ -69,11 +69,12 @@ Mistake Memory (/memory)                   [[pages]]
     ├── Recurring mistake patterns
     └── Recommended next moves
 
-JS Playground (/playground)                 [[pages]]
-└── CodePlaygroundView                     [[components#js-playground]]
-    ├── solve(...) editor
+Code Playground (/playground)               [[pages]]
+└── CodePlaygroundView                     [[components#code-playground]]
+    ├── JavaScript and C++ language tabs
+    ├── solve(...) / void solve() editor
     ├── JSON test case editor
-    └── Per-case pass/fail output
+    └── Per-case JS output or C++ compiler/runtime output
 
 Whiteboard (/whiteboard)                    [[pages]]
 └── WhiteboardView                         [[components#whiteboard]]
@@ -159,7 +160,7 @@ Question Detail (/questions/[id])      [[pages]]
 ### Layout
 | Component | File | Props | Used On | Notes |
 |-----------|------|-------|---------|-------|
-| `Navbar` | `navbar.tsx` | — | All [[pages#main-group-main]] routes | Uses `useSession()`, renders auth buttons/nav. Desktop authenticated nav omits the top-nav search input, uses `min-w-0` flex slots, and keeps links/actions in an internal `overflow-x-auto` rail so long nav labels remain contained on narrower viewports. |
+| `Navbar` | `navbar.tsx` | — | All [[pages#main-group-main]] routes | Uses `useSession()`, renders auth buttons/nav. Desktop authenticated nav omits the top-nav search input, keeps primary destinations visible, moves secondary destinations into a More menu, and pins admin/sign-out actions on the right without horizontal scrolling. |
 | `ThemeProvider` | `theme-provider.tsx` | `children` | Root layout | next-themes wrapper |
 | `LoadingBar` | `loading-bar.tsx` | — | All routes | Top loading progress bar |
 
@@ -260,10 +261,10 @@ Question Detail (/questions/[id])      [[pages]]
 |-----------|------|-------|---------|-------------|
 | `MistakeMemoryView` | `mistake-memory-view.tsx` | — | [[pages]] `/memory` | [[actions#actionsmistake-memoryts]] `getMistakeMemory()` |
 
-### JS Playground
+### Code Playground
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
-| `CodePlaygroundView` | `code-playground-view.tsx` | — | [[pages]] `/playground` | `lib/code-playground.ts` |
+| `CodePlaygroundView` | `code-playground-view.tsx` | — | [[pages]] `/playground` | `lib/code-playground.ts`, `POST /api/playground/cpp`, `lib/cpp-playground.ts` |
 
 ### Whiteboard
 | Component | File | Props | Used On | Data Source |

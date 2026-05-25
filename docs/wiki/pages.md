@@ -30,7 +30,7 @@
 | `/learning` | `app/(main)/learning/page.tsx` | **Auth required** | [[components#learning-graph]] `LearningGraphView` | [[actions#actionslearning-graphts]] |
 | `/memory` | `app/(main)/memory/page.tsx` | **Auth required** | [[components#mistake-memory]] `MistakeMemoryView` | [[actions#actionsmistake-memoryts]] |
 | `/reports` | `app/(main)/reports/page.tsx` | **Auth required** | [[components#study-reports]] `StudyReportView` | [[actions#actionsstudy-reportts]] |
-| `/playground` | `app/(main)/playground/page.tsx` | **Auth required** | [[components#js-playground]] `CodePlaygroundView` | Client-side `lib/code-playground.ts` |
+| `/playground` | `app/(main)/playground/page.tsx` | **Auth required** | [[components#code-playground]] `CodePlaygroundView` | Client-side `lib/code-playground.ts`, server C++ runner `POST /api/playground/cpp` |
 | `/whiteboard` | `app/(main)/whiteboard/page.tsx` | **Auth required** | [[components#whiteboard]] `WhiteboardView` | Client-side `lib/whiteboard.ts` + localStorage |
 | `/coach` | `app/(main)/coach/page.tsx` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper`, `AiInterviewCoach` | [[actions#solution-review-actions]] via fetch |
 | `/interview` | `app/(main)/interview/page.tsx` | **Auth required** | [[components#interview-room]] `InterviewRoom` | [[actions#actionsinterviewts]] `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()` |
@@ -53,6 +53,7 @@
 | `GET /api/cron/contest-reminder` | `app/api/cron/contest-reminder/route.ts` | Cron secret | [[actions#contest-reminder-cron]] | Send contest reminder emails |
 | `GET/POST /api/solution-review` | `app/api/solution-review/route.ts` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoach` | Enqueue/poll solution review jobs. See [[actions#post-apisolution-review]], [[actions#get-apisolution-review]]. |
 | `GET /api/question/code` | `app/api/question/code/route.ts` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper` | Returns authenticated user's saved code and language for a question. See [[actions#get-apiquestioncode]]. |
+| `POST /api/playground/cpp` | `app/api/playground/cpp/route.ts` | **Auth required** | [[components#code-playground]] `CodePlaygroundView` | Compiles and runs C++ stdin/stdout tests via Wandbox. See [[actions#post-apiplaygroundcpp]]. |
 | `GET/POST /api/auth/[...all]` | `app/api/auth/[...all]/route.ts` | — | [[components#auth]] `LoginForm`, `RegisterForm` | Better Auth handler |
 
 ## URL Parameter Details
@@ -142,10 +143,11 @@
 - Builds recurring mistake patterns from solution reviews, low-confidence reviews, and mock interview reflections.
 - Calls [[actions#actionsmistake-memoryts]] `getMistakeMemory()`.
 
-### JS Playground `/playground`
-- Auth required. Renders [[components#js-playground]] `CodePlaygroundView`.
-- Lets users define a JavaScript `solve(...)` function and run JSON test cases client-side via [[actions]]-free helper `lib/code-playground.ts`.
-- This is a lightweight foundation for the later WebContainers-based runner.
+### Code Playground `/playground`
+- Auth required. Renders [[components#code-playground]] `CodePlaygroundView`.
+- JavaScript mode lets users define a `solve(...)` function and run JSON test cases client-side via [[actions]]-free helper `lib/code-playground.ts`.
+- C++ mode lets users define `void solve()`, sends stdin/stdout-style tests to authenticated `POST /api/playground/cpp`, and displays Wandbox compiler/runtime output.
+- This is a lightweight foundation for the later WebContainers or persisted code-runner work.
 
 ### Whiteboard `/whiteboard`
 - Auth required. Renders [[components#whiteboard]] `WhiteboardView`.

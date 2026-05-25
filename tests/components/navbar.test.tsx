@@ -35,14 +35,15 @@ vi.mock("@/components/command-palette", () => ({
 }))
 
 describe("Navbar", () => {
-  it("keeps the authenticated desktop nav constrained inside the viewport", () => {
+  it("uses primary links plus a more menu instead of a horizontal scroll rail", () => {
     render(<Navbar />)
 
-    const navRail = screen.getByRole("link", { name: "Dashboard" }).parentElement
     const desktopNav = screen.getByRole("link", { name: "Companies" }).parentElement
 
-    expect(navRail).toHaveClass("min-w-0")
-    expect(navRail).toHaveClass("overflow-x-auto")
+    expect(screen.getByRole("button", { name: /more/i })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Playground" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Codeforces" })).not.toBeInTheDocument()
     expect(desktopNav).toHaveClass("min-w-0")
     expect(screen.queryByPlaceholderText("Search questions...")).not.toBeInTheDocument()
   })

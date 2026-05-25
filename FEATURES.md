@@ -27,9 +27,10 @@ The first roadmap wave is implemented. The next wave should push the project int
 
 ### In-Browser Code Runner And Test Playground
 
+- **Status:** Foundation implemented for JavaScript and C++.
 - **Difficulty:** Hard
 - **Libraries to try:** [WebContainers](https://webcontainers.io/guides/introduction), CodeMirror, Monaco Editor, `vitest`
-- **Build:** Let users write JavaScript/TypeScript solutions, create custom test cases, run AI-generated test harnesses, and compare outputs without leaving the app.
+- **Build:** Let users write JavaScript/TypeScript/C++ solutions, create custom test cases, run AI-generated test harnesses, and compare outputs without leaving the app. Current foundation supports client-side JavaScript and an authenticated C++ stdin/stdout runner through Wandbox.
 - **Teaches:** Sandboxed execution, browser runtimes, test harness design, editor UX, security boundaries.
 - **Data model ideas:** `CodeRun`, `TestCase`, `RunResult`, language, stdout, stderr, status, runtimeMs.
 - **Why it fits:** You already store code and run AI reviews. Executable practice makes the app feel much closer to a real interview environment.
@@ -109,7 +110,7 @@ The first roadmap wave is implemented. The next wave should push the project int
 1. ~~Whiteboard foundation~~ ✅ — biggest visible upgrade to interviews and system design; persistent per-question/session storage can layer on later.
 2. **Agentic Study Copilot** — turns existing features into an intelligent workflow.
 3. ~~Knowledge Graph Of Learning~~ ✅ — makes hidden relationships between topics, companies, reviews, and readiness visible.
-4. ~~JS Test Playground foundation~~ ✅ — adds serious coding-practice depth; WebContainers can layer on later.
+4. ~~Code Playground foundation~~ ✅ — adds serious coding-practice depth with JavaScript and C++; WebContainers/persisted run history can layer on later.
 5. ~~Personal Mistake Memory~~ ✅ — makes AI feedback compound over time.
 6. ~~Generated Study Reports foundation~~ ✅ — packages progress into a weekly narrative; AI narration can layer on later.
 7. **Durable Workflow Engine** — strengthens the backend as jobs multiply.
