@@ -72,6 +72,11 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
               <Link href="/planner"><Button variant="ghost" size="sm" className="shrink-0">Planner</Button></Link>
               <Link href="/reviews"><Button variant="ghost" size="sm" className="shrink-0">Reviews</Button></Link>
               <Link href="/readiness"><Button variant="ghost" size="sm" className="shrink-0">Readiness</Button></Link>
+              <Link href="/learning"><Button variant="ghost" size="sm" className="shrink-0">Graph</Button></Link>
+              <Link href="/memory"><Button variant="ghost" size="sm" className="shrink-0">Memory</Button></Link>
+              <Link href="/reports"><Button variant="ghost" size="sm" className="shrink-0">Reports</Button></Link>
+              <Link href="/playground"><Button variant="ghost" size="sm" className="shrink-0">Playground</Button></Link>
+              <Link href="/whiteboard"><Button variant="ghost" size="sm" className="shrink-0">Board</Button></Link>
               <Link href="/coach"><Button variant="ghost" size="sm" className="shrink-0">Coach</Button></Link>
               <Link href="/interview"><Button variant="ghost" size="sm" className="shrink-0">Interview</Button></Link>
               <Link href="/codeforces"><Button variant="ghost" size="sm" className="shrink-0">Codeforces</Button></Link>
@@ -132,6 +137,21 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
                 </Link>
                 <Link href="/readiness" className="py-2 text-sm" onClick={() => setOpen(false)}>
                   Readiness
+                </Link>
+                <Link href="/learning" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Learning Graph
+                </Link>
+                <Link href="/memory" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Mistake Memory
+                </Link>
+                <Link href="/reports" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Reports
+                </Link>
+                <Link href="/playground" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Playground
+                </Link>
+                <Link href="/whiteboard" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Whiteboard
                 </Link>
                 <Link href="/coach" className="py-2 text-sm" onClick={() => setOpen(false)}>
                   Coach

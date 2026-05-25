@@ -79,6 +79,30 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 |--------|------|--------|---------|-----------|---------|
 | `getReadinessScores()` | Yes | — | `{ companies[], overallScore, totalSolved, totalQuestions }` | [[components#readinessscores]] | No |
 
+### `actions/learning-graph.ts` — Derived-only (no new models)
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `getLearningGraph()` | Yes | — | `{ nodes[], edges[], insights }` from `lib/learning-graph.ts` | [[components#learning-graph]] `LearningGraphView` | No |
+
+### `actions/study-report.ts` — Derived-only (no new models)
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `getWeeklyStudyReport()` | Yes | — | Weekly report from `lib/study-report.ts`: metrics, highlights, recommendations, company focus, topic focus | [[components#study-reports]] `StudyReportView` | No |
+
+### `actions/mistake-memory.ts` — Derived-only (no new models)
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `getMistakeMemory()` | Yes | — | Mistake patterns and recommendations from `lib/mistake-memory.ts` | [[components#mistake-memory]] `MistakeMemoryView` | No |
+
+### `actions/system-map.ts` — Admin source scanner
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `getSystemMap()` | **Admin** | — | `{ nodes[], edges[], summary }` from `lib/system-map.ts` | [[components#system-map]] `SystemMapView` | No |
+
 ### `actions/interview.ts` — [[data-model#interviewsession]]
 
 | Action | Auth | Params | Returns | Called By | Mutates |

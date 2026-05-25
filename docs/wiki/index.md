@@ -19,6 +19,18 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
+### [2026-05-25] Learning graph, study reports, and system map
+- Added `/learning` with `LearningGraphView`, `actions/learning-graph.ts`, and `lib/learning-graph.ts` to visualize topic → question → company relationships, weak/strong topic clusters, and due-review pressure using React Flow (`@xyflow/react`).
+- Added `/reports` with `StudyReportView`, `actions/study-report.ts`, and `lib/study-report.ts` to generate a weekly study report with metrics, highlights, recommendations, company focus, and topic momentum.
+- Added `/admin/system-map` with `SystemMapView`, `actions/system-map.ts`, and `lib/system-map.ts` to scan the local project structure and render an admin architecture map of pages, API routes, components, actions, schema, and docs.
+- Updated navigation, command palette, middleware, package dependencies, and tests for the new graph/report features.
+
+### [2026-05-25] Mistake memory, JS playground, and whiteboard
+- Added `/memory` with `MistakeMemoryView`, `actions/mistake-memory.ts`, and `lib/mistake-memory.ts` to surface recurring mistake patterns and recommendations from solution reviews, low-confidence reviews, and mock interview reflections.
+- Added `/playground` with `CodePlaygroundView` and `lib/code-playground.ts` for a lightweight client-side JavaScript `solve(...)` test-case runner.
+- Added `/whiteboard` with `WhiteboardView` and `lib/whiteboard.ts` for a localStorage-backed SVG sketchpad for interview and DSA visual notes.
+- Updated navigation, command palette, middleware, roadmap status, and tests for these second-wave features.
+
 ### [2026-05-23] Next feature wave added to roadmap
 
 - Updated [`FEATURES.md`](../../FEATURES.md) with a new May 23 feature wave now that the first ten roadmap items are implemented.

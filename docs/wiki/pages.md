@@ -27,8 +27,14 @@
 | `/planner` | `app/(main)/planner/page.tsx` | **Auth required** | [[components#studyplanner]] `StudyPlanner` | [[actions#studyplanner]] |
 | `/reviews` | `app/(main)/reviews/page.tsx` | **Auth required** | [[components#reviewqueue]] `ReviewQueue` | [[actions#reviewts]] |
 | `/readiness` | `app/(main)/readiness/page.tsx` | **Auth required** | [[components#readinessscores]] `ReadinessScores` | [[actions#readinessts]] |
+| `/learning` | `app/(main)/learning/page.tsx` | **Auth required** | [[components#learning-graph]] `LearningGraphView` | [[actions#actionslearning-graphts]] |
+| `/memory` | `app/(main)/memory/page.tsx` | **Auth required** | [[components#mistake-memory]] `MistakeMemoryView` | [[actions#actionsmistake-memoryts]] |
+| `/reports` | `app/(main)/reports/page.tsx` | **Auth required** | [[components#study-reports]] `StudyReportView` | [[actions#actionsstudy-reportts]] |
+| `/playground` | `app/(main)/playground/page.tsx` | **Auth required** | [[components#js-playground]] `CodePlaygroundView` | Client-side `lib/code-playground.ts` |
+| `/whiteboard` | `app/(main)/whiteboard/page.tsx` | **Auth required** | [[components#whiteboard]] `WhiteboardView` | Client-side `lib/whiteboard.ts` + localStorage |
 | `/coach` | `app/(main)/coach/page.tsx` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper`, `AiInterviewCoach` | [[actions#solution-review-actions]] via fetch |
 | `/interview` | `app/(main)/interview/page.tsx` | **Auth required** | [[components#interview-room]] `InterviewRoom` | [[actions#actionsinterviewts]] `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()` |
+| `/admin/system-map` | `app/(main)/admin/system-map/page.tsx` | **Admin required** | [[components#system-map]] `SystemMapView` | [[actions#actionssystem-mapts]] |
 
 ### API Routes
 
@@ -70,7 +76,7 @@
 
 ## Route Protection
 
-- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, `/codeforces`, `/planner`, `/reviews`, `/readiness`, `/coach`, and `/interview` by checking for Better Auth session cookie. See [[configuration#config-files]].
+- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, `/codeforces`, `/planner`, `/reviews`, `/readiness`, `/learning`, `/memory`, `/reports`, `/playground`, `/whiteboard`, `/coach`, and `/interview` by checking for Better Auth session cookie. See [[configuration#config-files]].
 - **Offline support** — The root layout registers a service worker (`/sw.js`) via `Script` tag and links `manifest.json` for PWA standalone mode. The `OfflineBanner` component shows an offline toast on any page. The `ReviewQueue` falls back to IndexedDB cache when offline. See [[architecture#pwa--offline-support]] and [[components#offline-banner]].
 - **Server components** (e.g., dashboard page) call `auth.api.getSession()` server-side and redirect if not authenticated.
 - **Server actions** call `auth.api.getSession()` and return `{ success: false, error: "Not authenticated" }`. See [[conventions#server-action-pattern]].
@@ -120,3 +126,33 @@
 - **Admin role required** — checks `session.user.role === "admin"`.
 - [[components#admin]] `AdminQuestionsForm`: single question import by LeetCode URL, CSV file upload.
 - Calls [[actions#admints]] `importQuestion()` and `bulkImportCSV()`.
+
+### Learning Graph `/learning`
+- Auth required. Renders [[components#learning-graph]] `LearningGraphView`.
+- Uses React Flow (`@xyflow/react`) to visualize topic → question → company relationships, plus weak-topic, strong-topic, and due-review summaries.
+- Calls [[actions#actionslearning-graphts]] `getLearningGraph()`, which derives graph data from `Question`, `CompanyQuestion`, `UserQuestion`, and `ReviewItem`.
+
+### Reports `/reports`
+- Auth required. Renders [[components#study-reports]] `StudyReportView`.
+- Shows a generated weekly study report with solved count, hard problems, due/completed reviews, interview sessions, company focus, topic momentum, highlights, and recommended next actions.
+- Calls [[actions#actionsstudy-reportts]] `getWeeklyStudyReport()`.
+
+### Mistake Memory `/memory`
+- Auth required. Renders [[components#mistake-memory]] `MistakeMemoryView`.
+- Builds recurring mistake patterns from solution reviews, low-confidence reviews, and mock interview reflections.
+- Calls [[actions#actionsmistake-memoryts]] `getMistakeMemory()`.
+
+### JS Playground `/playground`
+- Auth required. Renders [[components#js-playground]] `CodePlaygroundView`.
+- Lets users define a JavaScript `solve(...)` function and run JSON test cases client-side via [[actions]]-free helper `lib/code-playground.ts`.
+- This is a lightweight foundation for the later WebContainers-based runner.
+
+### Whiteboard `/whiteboard`
+- Auth required. Renders [[components#whiteboard]] `WhiteboardView`.
+- Provides a lightweight localStorage-backed SVG sketchpad for DSA traces, recursion trees, graph traversal notes, and interview scratch work.
+- Uses `lib/whiteboard.ts` for serialization/deserialization and board summaries.
+
+### System Map `/admin/system-map`
+- Admin required. Renders [[components#system-map]] `SystemMapView`.
+- Scans project source paths on the server and uses React Flow to visualize pages, API routes, components, server actions, Prisma schema, and wiki docs.
+- Calls [[actions#actionssystem-mapts]] `getSystemMap()`.

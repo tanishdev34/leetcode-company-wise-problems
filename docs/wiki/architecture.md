@@ -9,6 +9,7 @@
 | **Framework** | Next.js 16 (App Router), React 19, TypeScript | [[configuration#config-files]] |
 | **Styling** | Tailwind CSS v4 + shadcn/ui | [[configuration]] |
 | **Animations** | React Bits (BlurText, AnimatedContent, SpotlightCard, etc.) | [[components#animation-components-react-bits]] |
+| **Graph UI** | React Flow via `@xyflow/react` | [[components#learning-graph]], [[components#system-map]] |
 | **Database** | PostgreSQL (Neon/Supabase) | [[data-model]], [[configuration#prisma]] |
 | **ORM** | Prisma 7 | [[data-model]], [[configuration#prisma]] |
 | **Auth** | Better Auth (email/password + Google OAuth) | [[configuration#better-auth]], [[components#auth]] |
@@ -96,6 +97,12 @@ lib/               # Shared utilities
   auth.ts          #   Better Auth server config → [[configuration#better-auth]]
   auth-client.ts   #   Better Auth client config → [[configuration#better-auth]]
   redis.ts         #   Upstash Redis client
+  learning-graph.ts # Pure graph builder for /learning
+  mistake-memory.ts # Pattern builder for /memory
+  code-playground.ts # JS test runner helper for /playground
+  study-report.ts # Pure weekly study report generator
+  system-map.ts   # Pure source map graph builder
+  whiteboard.ts   # Whiteboard serialization helpers
   utils.ts         #   cn() utility → [[conventions#styling]]
    ai.ts            #   Shared Crof AI client (Anthropic-compatible, @ai-sdk/anthropic)
    analyze.ts       #   AI analysis worker (Crof AI via @ai-sdk/anthropic, retry/backoff) → [[data-model#analysisjob-ai-analysis-queue]]

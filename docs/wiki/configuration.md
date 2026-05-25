@@ -64,6 +64,12 @@ CRON_SECRET=development
 | `postinstall` | `bun prisma generate` | Auto-generate Prisma client after install | [[data-model]] |
 | `db:seed` | `npx prisma db seed` | Run CSV import seed script | [[data-model#seed-script]] |
 
+## Notable UI Dependencies
+
+| Package | Purpose | Used By |
+|---------|---------|---------|
+| `@xyflow/react` | Interactive node graph rendering | [[components#learning-graph]], [[components#system-map]] |
+
 ## Prisma
 
 - **Schema**: `prisma/schema.prisma` — full details in [[data-model]]

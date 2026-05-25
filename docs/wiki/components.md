@@ -50,6 +50,42 @@ Readiness (/readiness)                     [[pages]]
     └── Company list
         └── Per-company cards → link to /companies/[slug]
 
+Learning Graph (/learning)                 [[pages]]
+└── LearningGraphView                      [[components#learning-graph]]
+    ├── Weak/strong topic summary cards
+    ├── Review pressure card
+    └── React Flow graph (topic → question → company)
+
+Reports (/reports)                         [[pages]]
+└── StudyReportView                        [[components#study-reports]]
+    ├── Weekly metric cards
+    ├── Highlights
+    ├── Recommended next actions
+    ├── Company focus
+    └── Topic momentum
+
+Mistake Memory (/memory)                   [[pages]]
+└── MistakeMemoryView                      [[components#mistake-memory]]
+    ├── Recurring mistake patterns
+    └── Recommended next moves
+
+JS Playground (/playground)                 [[pages]]
+└── CodePlaygroundView                     [[components#js-playground]]
+    ├── solve(...) editor
+    ├── JSON test case editor
+    └── Per-case pass/fail output
+
+Whiteboard (/whiteboard)                    [[pages]]
+└── WhiteboardView                         [[components#whiteboard]]
+    ├── SVG drawing surface
+    ├── Color/width controls
+    └── localStorage save/restore
+
+Admin System Map (/admin/system-map)        [[pages]]
+└── SystemMapView                          [[components#system-map]]
+    ├── Architecture summary cards
+    └── React Flow graph (layers → files)
+
 Global (all pages)
 └── CommandPalette (in Navbar)             [[components#commandpalette]]
     ├── Cmd+K / Ctrl+K trigger button
@@ -209,10 +245,40 @@ Question Detail (/questions/[id])      [[pages]]
 |-----------|------|-------|---------|-------------|
 | `ReadinessScores` | `readiness-scores.tsx` | — | [[pages]] `/readiness` | [[actions#readinessts]] `getReadinessScores()` |
 
+### Learning Graph
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `LearningGraphView` | `learning-graph-view.tsx` | — | [[pages]] `/learning` | [[actions#actionslearning-graphts]] `getLearningGraph()` |
+
+### Study Reports
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `StudyReportView` | `study-report-view.tsx` | — | [[pages]] `/reports` | [[actions#actionsstudy-reportts]] `getWeeklyStudyReport()` |
+
+### Mistake Memory
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `MistakeMemoryView` | `mistake-memory-view.tsx` | — | [[pages]] `/memory` | [[actions#actionsmistake-memoryts]] `getMistakeMemory()` |
+
+### JS Playground
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `CodePlaygroundView` | `code-playground-view.tsx` | — | [[pages]] `/playground` | `lib/code-playground.ts` |
+
+### Whiteboard
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `WhiteboardView` | `whiteboard-view.tsx` | — | [[pages]] `/whiteboard` | `lib/whiteboard.ts` + localStorage |
+
+### System Map
+| Component | File | Props | Used On | Data Source |
+|-----------|------|-------|---------|-------------|
+| `SystemMapView` | `system-map-view.tsx` | — | [[pages]] `/admin/system-map` | [[actions#actionssystem-mapts]] `getSystemMap()` |
+
 ### Command Palette
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
-| `CommandPalette` | `command-palette.tsx` | `isAdmin?: boolean, isAuthenticated?: boolean` | [[components#layout]] Navbar | — (static page list) |
+| `CommandPalette` | `command-palette.tsx` | `isAdmin?: boolean, isAuthenticated?: boolean` | [[components#layout]] Navbar | — (static page list, includes `/learning`, `/reports`, and admin `/admin/system-map`) |
 
 ### Interview Room
 | Component | File | Props | Used On | Data Source |

@@ -106,16 +106,16 @@ The first roadmap wave is implemented. The next wave should push the project int
 
 ## Next Suggested Build Order
 
-1. **Whiteboard Interview Mode** — biggest visible upgrade to interviews and system design.
+1. ~~Whiteboard foundation~~ ✅ — biggest visible upgrade to interviews and system design; persistent per-question/session storage can layer on later.
 2. **Agentic Study Copilot** — turns existing features into an intelligent workflow.
-3. **Knowledge Graph Of Learning** — makes hidden relationships between topics, companies, reviews, and readiness visible.
-4. **In-Browser Code Runner And Test Playground** — adds serious coding-practice depth.
-5. **Personal Mistake Memory** — makes AI feedback compound over time.
-6. **AI Generated Study Reports** — packages progress into a weekly narrative.
+3. ~~Knowledge Graph Of Learning~~ ✅ — makes hidden relationships between topics, companies, reviews, and readiness visible.
+4. ~~JS Test Playground foundation~~ ✅ — adds serious coding-practice depth; WebContainers can layer on later.
+5. ~~Personal Mistake Memory~~ ✅ — makes AI feedback compound over time.
+6. ~~Generated Study Reports foundation~~ ✅ — packages progress into a weekly narrative; AI narration can layer on later.
 7. **Durable Workflow Engine** — strengthens the backend as jobs multiply.
 8. **Voice Mock Interviewer** — ambitious interview realism once the copilot and workflow layer are stronger.
 9. **Accessibility And Design-System Mastery Pass** — hardens the growing UI.
-10. **Codebase Intelligence Map** — meta-tooling for maintaining the project as it grows.
+10. ~~Codebase Intelligence Map~~ ✅ — meta-tooling for maintaining the project as it grows.
 
 ## Quick Wins
 

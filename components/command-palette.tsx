@@ -24,6 +24,12 @@ import {
   Target,
   MessageSquare,
   Play,
+  GitBranch,
+  FileText,
+  Network,
+  ClipboardList,
+  FlaskConical,
+  PenLine,
 } from "lucide-react";
 
 interface CommandPaletteProps {
@@ -39,11 +45,17 @@ const PAGES = [
   { id: "planner", label: "Study Planner", href: "/planner", icon: Calendar, auth: true, admin: false },
   { id: "reviews", label: "Review Queue", href: "/reviews", icon: Brain, auth: true, admin: false },
   { id: "readiness", label: "Interview Readiness", href: "/readiness", icon: Target, auth: true, admin: false },
+  { id: "learning", label: "Learning Graph", href: "/learning", icon: GitBranch, auth: true, admin: false },
+  { id: "memory", label: "Mistake Memory", href: "/memory", icon: ClipboardList, auth: true, admin: false },
+  { id: "reports", label: "Study Reports", href: "/reports", icon: FileText, auth: true, admin: false },
+  { id: "playground", label: "JS Test Playground", href: "/playground", icon: FlaskConical, auth: true, admin: false },
+  { id: "whiteboard", label: "Whiteboard", href: "/whiteboard", icon: PenLine, auth: true, admin: false },
   { id: "stats", label: "Stats", href: "/stats", icon: BarChart3, auth: true, admin: false },
   { id: "codeforces", label: "Codeforces", href: "/codeforces", icon: Code, auth: true, admin: false },
   { id: "coach", label: "AI Interview Coach", href: "/coach", icon: MessageSquare, auth: true, admin: false },
   { id: "interview", label: "Mock Interview Room", href: "/interview", icon: Play, auth: true, admin: false },
   { id: "admin", label: "Admin — Add Questions", href: "/admin/questions", icon: Shield, auth: true, admin: true },
+  { id: "system-map", label: "Admin — System Map", href: "/admin/system-map", icon: Network, auth: true, admin: true },
 ];
 
 export function CommandPalette({ isAdmin = false, isAuthenticated = false }: CommandPaletteProps) {
