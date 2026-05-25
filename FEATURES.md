@@ -12,6 +12,111 @@ The goal is not to bolt on random features. Prefer additions that make the app a
 - Use mature libraries where they teach real-world patterns.
 - Keep every feature connected to LeetCode, Codeforces, interviews, study consistency, or competitive programming.
 
+## Next Feature Wave — 2026-05-23
+
+The first roadmap wave is implemented. The next wave should push the project into deeper interaction models: canvas-based learning, agentic workflows, code execution, learning memory, durable background jobs, and stronger local-first behavior.
+
+### Whiteboard Interview Mode
+
+- **Difficulty:** Hard
+- **Libraries to try:** [`tldraw`](https://github.com/tldraw/tldraw), [`@excalidraw/excalidraw`](https://github.com/excalidraw/excalidraw), optional Liveblocks/Yjs for collaboration
+- **Build:** Add a whiteboard workspace inside `/interview` and question detail pages. Users can draw system-design diagrams, trace DSA state transitions, sketch recursion trees, and save diagrams per question or interview session.
+- **Teaches:** Infinite canvas UI, drawing tools, persisted canvas state, export flows, real-time collaboration, visual problem solving.
+- **Data model ideas:** `Whiteboard`, `WhiteboardSnapshot`, `questionId`, `interviewSessionId`, `canvasJson`, `previewImageUrl`, `updatedAt`.
+- **Why it fits:** You already have interview sessions and notes. A whiteboard makes the app useful for system design, visual DSA, and richer mock interviews.
+
+### In-Browser Code Runner And Test Playground
+
+- **Difficulty:** Hard
+- **Libraries to try:** [WebContainers](https://webcontainers.io/guides/introduction), CodeMirror, Monaco Editor, `vitest`
+- **Build:** Let users write JavaScript/TypeScript solutions, create custom test cases, run AI-generated test harnesses, and compare outputs without leaving the app.
+- **Teaches:** Sandboxed execution, browser runtimes, test harness design, editor UX, security boundaries.
+- **Data model ideas:** `CodeRun`, `TestCase`, `RunResult`, language, stdout, stderr, status, runtimeMs.
+- **Why it fits:** You already store code and run AI reviews. Executable practice makes the app feel much closer to a real interview environment.
+
+### Agentic Study Copilot
+
+- **Difficulty:** Hard
+- **Libraries to try:** [`assistant-ui`](https://github.com/assistant-ui/assistant-ui), [`CopilotKit`](https://github.com/CopilotKit/CopilotKit), [`Mastra`](https://github.com/mastra-ai/mastra), AI SDK
+- **Build:** Add an in-app copilot that can answer questions and take approved actions: plan my week, find weak graph problems, move these to review, create a mock interview, summarize my progress, or explain why a question is due.
+- **Teaches:** Agent tools, human-in-the-loop approvals, structured AI output, generative UI, chat UX, safe mutation design.
+- **Data model ideas:** `CopilotThread`, `CopilotMessage`, `CopilotAction`, action status (`proposed`/`approved`/`applied`/`rejected`).
+- **Why it fits:** The app has enough user context now for an assistant to do useful work rather than generic chat.
+
+### Knowledge Graph Of Learning
+
+- **Difficulty:** Medium to Hard
+- **Libraries to try:** [`@xyflow/react`](https://github.com/xyflow/xyflow), `dagre`, `recharts`
+- **Build:** Create an interactive graph that connects topics, companies, questions, solved attempts, review due dates, and weak areas. Let users click from a weak topic to recommended questions and related companies.
+- **Teaches:** Graph data modeling, node-based UI, derived analytics, interactive visualization, layout algorithms.
+- **Data model ideas:** Start derived-only from existing data; later persist `TopicRelation`, `LearningNode`, or user-specific graph snapshots.
+- **Why it fits:** The app already has topics, companies, reviews, readiness scores, and AI feedback. A graph can make those connections visible.
+
+### Personal Mistake Memory
+
+- **Difficulty:** Hard
+- **Libraries to try:** AI SDK embeddings, `pgvector`, structured outputs, optional Mastra memory
+- **Build:** Turn wrong attempts, hint reveals, review reflections, coach feedback, and interview ratings into a searchable memory layer. The coach can say, "You often miss binary-search boundary cases" or "You improved on DP state definition this week."
+- **Teaches:** Retrieval, embeddings, summarization, longitudinal user modeling, privacy-aware AI memory.
+- **Data model ideas:** `LearningMemory`, `MistakePattern`, `MemorySource`, embedding vector, confidence, lastSeenAt.
+- **Why it fits:** This is the natural next step after reviews and AI feedback: make the app remember how the user learns.
+
+### Durable Workflow Engine
+
+- **Difficulty:** Medium to Hard
+- **Libraries to try:** [`Trigger.dev`](https://automationatlas.io/tools/trigger-dev/), Inngest, BullMQ
+- **Build:** Move long-running and scheduled work into durable workflows: AI reviews, reminders, daily emails, import jobs, sync jobs, notification fan-out, and weekly summaries.
+- **Teaches:** Durable background jobs, retries, observability, idempotency, workflow design, failure recovery.
+- **Data model ideas:** `WorkflowRun`, `WorkflowEvent`, `WorkflowAttempt`, or use the platform dashboard as the source of truth.
+- **Why it fits:** The app already has cron, AI jobs, retries, imports, and sync. A real workflow layer will make it easier to grow safely.
+
+### Voice Mock Interviewer
+
+- **Difficulty:** Hard
+- **Libraries to try:** Web Speech API, OpenAI Realtime or speech APIs, LiveKit, `assistant-ui`
+- **Build:** Add voice-based mock interviews where the AI asks follow-ups, listens to explanations, scores communication, and saves transcripts plus feedback.
+- **Teaches:** Voice UX, streaming AI, transcript handling, rubric design, latency management.
+- **Data model ideas:** `InterviewTranscript`, `InterviewTurn`, `SpeechAssessment`, `communicationScore`, `clarityScore`.
+- **Why it fits:** Product Hunt interview-prep tools are moving toward voice and realistic interviews; this would make your existing interview room much more alive.
+
+### AI Generated Study Reports
+
+- **Difficulty:** Medium
+- **Libraries to try:** CopilotKit generative UI, `recharts`, React Email
+- **Build:** Generate weekly study reports with charts, mistake summaries, plan changes, due reviews, readiness movement, and recommended next actions. Render them in-app and optionally email them.
+- **Teaches:** Narrative analytics, report generation, AI-to-UI mapping, scheduled jobs, email/product consistency.
+- **Data model ideas:** `StudyReport`, `reportPeriodStart`, `reportPeriodEnd`, `summaryJson`, `emailedAt`.
+- **Why it fits:** You already collect enough data to tell a meaningful weekly story.
+
+### Accessibility And Design-System Mastery Pass
+
+- **Difficulty:** Medium
+- **Libraries to try:** [`react-aria-components`](https://react-aria.adobe.com/getting-started), shadcn blocks, Storybook/Ladle, Axe
+- **Build:** Audit complex interactions like command palette, planner, review queue, interview room, forms, and future whiteboard controls. Add accessible primitives, stories, keyboard tests, and visual state docs.
+- **Teaches:** Accessibility engineering, reusable component design, keyboard UX, regression prevention.
+- **Why it fits:** The app is becoming interaction-heavy. Accessibility work will make the UI feel mature rather than just feature-rich.
+
+### Codebase Intelligence Map
+
+- **Difficulty:** Medium
+- **Libraries to try:** ReactGraph-style analysis, `ts-morph`, `@xyflow/react`
+- **Build:** Create an internal `/admin/system-map` page that visualizes routes, components, actions, API routes, models, and wiki docs. Use it to help future agents and yourself understand the project.
+- **Teaches:** static analysis, AST parsing, developer tooling, graph UI, documentation automation.
+- **Why it fits:** This project has many moving parts now. A codebase map would be both useful and a very cool meta-feature.
+
+## Next Suggested Build Order
+
+1. **Whiteboard Interview Mode** — biggest visible upgrade to interviews and system design.
+2. **Agentic Study Copilot** — turns existing features into an intelligent workflow.
+3. **Knowledge Graph Of Learning** — makes hidden relationships between topics, companies, reviews, and readiness visible.
+4. **In-Browser Code Runner And Test Playground** — adds serious coding-practice depth.
+5. **Personal Mistake Memory** — makes AI feedback compound over time.
+6. **AI Generated Study Reports** — packages progress into a weekly narrative.
+7. **Durable Workflow Engine** — strengthens the backend as jobs multiply.
+8. **Voice Mock Interviewer** — ambitious interview realism once the copilot and workflow layer are stronger.
+9. **Accessibility And Design-System Mastery Pass** — hardens the growing UI.
+10. **Codebase Intelligence Map** — meta-tooling for maintaining the project as it grows.
+
 ## Quick Wins
 
 ### Command Palette

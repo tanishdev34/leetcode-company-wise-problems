@@ -8,7 +8,7 @@ function sleep(ms: number) {
 
 async function runAnalysis(code: string, language: string) {
   const { generateText, Output } = await import("ai")
-  const { cerebras } = await import("@ai-sdk/cerebras")
+  const { crof } = await import("@/lib/ai")
   const { z } = await import("zod")
 
   const schema = z.object({
@@ -31,7 +31,7 @@ async function runAnalysis(code: string, language: string) {
   })
 
   const { output } = await generateText({
-    model: cerebras("zai-glm-4.7"),
+    model: crof("glm-4.7-flash"),
     output: Output.object({ schema }),
     prompt: `You are a LeetCode solution analyzer. Analyze the following ${language} code and fill the structured output fields.
 

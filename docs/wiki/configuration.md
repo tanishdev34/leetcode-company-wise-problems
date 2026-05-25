@@ -21,7 +21,8 @@ UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
 # AI Analysis — used by [[actions#post-apianalyze]] (admin feature, background queue)
-CEREBRAS_API_KEY="..."
+# Crof AI endpoint (Anthropic-compatible): https://anthropic.nahcrof.com/v1 — model: glm-4.7-flash
+CROF_API_KEY="nahcrof_..."
 
 # SMTP (for email reminders via [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]])
 SMTP_HOST=smtp.gmail.com

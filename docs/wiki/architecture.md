@@ -14,8 +14,8 @@
 | **Auth** | Better Auth (email/password + Google OAuth) | [[configuration#better-auth]], [[components#auth]] |
 | **Search** | PostgreSQL `pg_trgm` extension | [[configuration#search-index]], [[actions#get-apisearchqpage1pagesize20]] |
 | **Caching** | Upstash Redis | [[configuration#environment-variables]] |
-| **AI Analysis** | Cerebras via AI SDK (`@ai-sdk/cerebras`) — queued background jobs via `next/server` `after()` with retry/backoff | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]] |
-| **AI Interview Coach** | Cerebras via AI SDK — structured interview feedback on saved code | [[actions#post-apisolution-review]], [[data-model#solutionreview]] |
+| **AI Analysis** | Crof AI (Anthropic-compatible) via AI SDK (`@ai-sdk/anthropic`, shared client in `lib/ai.ts`) — queued background jobs via `next/server` `after()` with retry/backoff | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]] |
+| **AI Interview Coach** | Crof AI (Anthropic-compatible) via AI SDK — structured interview feedback on saved code | [[actions#post-apisolution-review]], [[data-model#solutionreview]] |
 | **Email** | React Email (component-based templates) + Nodemailer (transport) | [[actions#emailts]], [[lib/email]] |
 | **PWA / Offline** | Service Worker (`public/sw.js`) + IndexedDB via `idb-keyval` (`lib/offline.ts`) | [[configuration#config-files]] `next.config.mjs` |
 | **Package Manager** | Bun | [[configuration#package-scripts]] |
@@ -97,8 +97,9 @@ lib/               # Shared utilities
   auth-client.ts   #   Better Auth client config → [[configuration#better-auth]]
   redis.ts         #   Upstash Redis client
   utils.ts         #   cn() utility → [[conventions#styling]]
-  analyze.ts       #   AI analysis worker (Cerebras, retry/backoff) → [[data-model#analysisjob-ai-analysis-queue]]
-  solution-review.ts  #  AI interview coach worker (Cerebras, structured output, retry/backoff) → [[data-model#solutionreview]]
+   ai.ts            #   Shared Crof AI client (Anthropic-compatible, @ai-sdk/anthropic)
+   analyze.ts       #   AI analysis worker (Crof AI via @ai-sdk/anthropic, retry/backoff) → [[data-model#analysisjob-ai-analysis-queue]]
+   solution-review.ts  #  AI interview coach worker (Crof AI via @ai-sdk/anthropic, structured output, retry/backoff) → [[data-model#solutionreview]]
   offline.ts       #   IndexedDB offline cache utilities (idb-keyval) → [[architecture#pwa--offline-support]]
 
 public/            # Static assets

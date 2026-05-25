@@ -128,7 +128,7 @@ Tracks background AI analysis runs so the work survives the user closing the pag
 
 Indexes: `(userId, questionId, status)`, `(userId, questionId, createdAt)`
 
-Worker: `lib/analyze.ts` `processAnalysisJob(jobId)` — runs Cerebras + merges into [[#userquestion-user-progress]]; retries with exponential backoff (2s, 8s, 30s).
+Worker: `lib/analyze.ts` `processAnalysisJob(jobId)` — runs Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`) + merges into [[#userquestion-user-progress]]; retries with exponential backoff (2s, 8s, 30s).
 
 Lifecycle: created by `POST /api/analyze`, scheduled via `next/server` `after()`, polled by client via `GET /api/analyze`.
 
@@ -216,7 +216,7 @@ Tracks background AI solution review runs, providing interview-style feedback on
 
 Index: `(userId, questionId)`
 
-Worker: `lib/solution-review.ts` `processSolutionReview(jobId)` — runs Cerebras with structured output (correctness, complexity, edge cases, explanation, follow-ups, suggestions); retries with exponential backoff (2s, 8s, 30s).
+Worker: `lib/solution-review.ts` `processSolutionReview(jobId)` — runs Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`) with structured output (correctness, complexity, edge cases, explanation, follow-ups, suggestions); retries with exponential backoff (2s, 8s, 30s).
 
 Lifecycle: created by `POST /api/solution-review`, scheduled via `next/server` `after()`, polled by client via `GET /api/solution-review`.
 

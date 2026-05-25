@@ -19,6 +19,12 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
+### [2026-05-23] Next feature wave added to roadmap
+
+- Updated [`FEATURES.md`](../../FEATURES.md) with a new May 23 feature wave now that the first ten roadmap items are implemented.
+- New roadmap ideas include whiteboard interview mode, in-browser code runner, agentic study copilot, learning knowledge graph, personal mistake memory, durable workflow engine, voice mock interviewer, generated study reports, accessibility/design-system pass, and codebase intelligence map.
+- Added current library/product inspiration including tldraw, Excalidraw, WebContainers, assistant-ui, CopilotKit, Mastra, React Flow/xyflow, Trigger.dev, React Aria Components, and shadcn blocks.
+
 ### [2026-05-23] Navbar overflow fix
 - **Navbar** — desktop authenticated navigation now reserves the row for navigation/actions only, removing the collapsible top-nav search slot that could overlap `+ Add Questions`. The signed-in link rail uses shrinkable flex constraints plus internal horizontal scrolling so recently added links (`Readiness`, `Coach`, `Interview`, `Codeforces`) stay inside the viewport. See [[components#layout]].
 - **Regression test** — added `tests/components/navbar.test.tsx` to verify the authenticated desktop nav omits the top-nav search input and keeps `min-w-0` + `overflow-x-auto` layout constraints.
@@ -46,9 +52,9 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 - **Dependency** — `idb-keyval` added for IndexedDB access.
 
 ### [2026-05-23] AI Interview Coach (Feature 6)
-- **AI Interview Coach** — new `/coach` page with `AiInterviewCoach` component that analyzes saved code and returns structured interview-style feedback on correctness, complexity, edge cases, explanation quality, follow-up questions, and improvement suggestions. Uses Cerebras via AI SDK with structured output.
+- **AI Interview Coach** — new `/coach` page with `AiInterviewCoach` component that analyzes saved code and returns structured interview-style feedback on correctness, complexity, edge cases, explanation quality, follow-up questions, and improvement suggestions. Uses Crof AI (Anthropic-compatible) via AI SDK (`@ai-sdk/anthropic`, shared client in `lib/ai.ts`) with structured output.
 - **`SolutionReview` model** — new Prisma model tracking review job state (`pending`/`running`/`done`/`error`) with fields for structured AI output. See [[data-model#solutionreview]].
-- **`lib/solution-review.ts`** — background worker with retry/backoff (similar to `lib/analyze.ts`) that processes reviews via Cerebras.
+- **`lib/solution-review.ts`** — background worker with retry/backoff (similar to `lib/analyze.ts`) that processes reviews via Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`).
 - **`POST/GET /api/solution-review`** — enqueue and poll endpoints for solution reviews. See [[actions#post-apisolution-review]].
 - **`GET /api/question/code`** — API route returning the authenticated user's saved code for a question. See [[actions#get-apiquestioncode]].
 - **`enqueueSolutionReview(questionId)`** — server action in `actions/questions.ts` to enqueue a review. See [[actions#actionsquestionsts]].

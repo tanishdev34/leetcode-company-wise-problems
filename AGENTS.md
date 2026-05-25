@@ -27,6 +27,18 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 | [`docs/wiki/configuration.md`](docs/wiki/configuration.md) | Environment variables, config files |
 | [`docs/wiki/conventions.md`](docs/wiki/conventions.md) | Coding conventions, naming, styles, preferences |
 
+## AI / LLM Configuration
+
+This project uses **Crof AI** as the LLM provider for AI analysis and interview coach features. The Anthropic-compatible endpoint is used via `@ai-sdk/anthropic`.
+
+| Endpoint | Type | Provider Package |
+|----------|------|-----------------|
+| `https://anthropic.nahcrof.com/v1` | Anthropic-compatible | `@ai-sdk/anthropic` (via `createAnthropic({ baseURL: "https://anthropic.nahcrof.com/v1" })`) |
+
+The API key is read from the `CROF_API_KEY` environment variable.
+
+> **Usage pattern**: A shared client is configured in `lib/ai.ts` and imported by both workers. Both the analysis worker (`lib/analyze.ts`) and solution review worker (`lib/solution-review.ts`) use `crof("glm-4.7-flash")` for model inference.
+
 ## Key Conventions
 
 - **Framework**: Next.js 16 App Router, React 19, TypeScript
@@ -75,7 +87,7 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 │   ├── auth/                 # Login/Register forms
 │   └── ...                   # Custom components
 ├── generated/prisma/         # Generated Prisma client (don't edit)
-├── lib/                      # Utilities (db, auth, redis, utils, offline)
+├── lib/                      # Utilities (db, auth, ai, redis, utils, offline)
 ├── emails/                  # React Email components (daily question, contest reminders)
 ├── docs/
 │   ├── wiki/                 # Project wiki (this)

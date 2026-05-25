@@ -183,7 +183,7 @@ Enqueues an AI analysis job (admin only) and returns immediately.
 - Body: `{ questionId: string, code: string, language: string }`
 - Creates an [[data-model#analysisjob-ai-analysis-queue]] row with `status: "pending"`, schedules `processAnalysisJob(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
 - If a `pending`/`running` job already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
-- The background worker (`lib/analyze.ts`) calls Cerebras, merges output into [[data-model#userquestion-user-progress]] `notes`/`hints`, and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- The background worker (`lib/analyze.ts`) calls Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`), merges output into [[data-model#userquestion-user-progress]] `notes`/`hints`, and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
 - Called by: [[components#questions]] `NoteEditor` Generate button.
 
 ### `GET /api/analyze?questionId=`
@@ -204,7 +204,7 @@ Enqueues an AI solution review job and returns immediately.
 - Body: `{ questionId: string, code: string, language?: string }`
 - Creates a [[data-model#solutionreview]] row with `status: "pending"`, schedules `processSolutionReview(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
 - If a `pending`/`running` review already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
-- The background worker (`lib/solution-review.ts`) calls Cerebras with structured output (correctness, time/space complexity, edge cases, explanation, follow-ups, suggestions) and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- The background worker (`lib/solution-review.ts`) calls Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`) with structured output (correctness, time/space complexity, edge cases, explanation, follow-ups, suggestions) and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
 - Called by: [[components#aiinterviewcoach]] `AiInterviewCoach` "Review My Solution" button.
 
 ### `GET /api/solution-review?jobId=`
