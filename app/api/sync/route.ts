@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { normalizeLeetcodeUrl } from "@/lib/utils"
 import { Difficulty } from "@/generated/prisma/client"
 
 const BASE = "https://alfa-leetcode-api.onrender.com"
@@ -31,7 +32,7 @@ async function fetchQuestionDetails(titleSlug: string): Promise<{
     return {
       title: data.questionTitle,
       leetcodeUrl:
-        data.link ?? `https://leetcode.com/problems/${titleSlug}`,
+        normalizeLeetcodeUrl(data.link ?? `https://leetcode.com/problems/${titleSlug}`),
       difficulty: diff as Difficulty,
       topics: (data.topicTags ?? []).map((t) => t.name).filter(Boolean),
     }
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     const slugToSolvedAt = new Map<string, Date>()
     const urlToSlug = new Map<string, string>()
     for (const s of submissions) {
-      const url = `https://leetcode.com/problems/${s.titleSlug}`
+      const url = normalizeLeetcodeUrl(`https://leetcode.com/problems/${s.titleSlug}`)
       const solvedAt = new Date(parseInt(s.timestamp) * 1000)
       const existing = slugToSolvedAt.get(s.titleSlug)
       if (!existing || solvedAt > existing)

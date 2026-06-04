@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { normalizeLeetcodeUrl } from "@/lib/utils"
 import type { Difficulty, TimePeriod } from "@/generated/prisma/client"
 
 export async function POST(req: NextRequest) {
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     })
 
     // 2. Upsert the question
-    const leetcodeUrl = `https://leetcode.com/problems/${titleSlug}/`
+    const leetcodeUrl = normalizeLeetcodeUrl(`https://leetcode.com/problems/${titleSlug}/`)
     const question = await prisma.question.upsert({
       where: { leetcodeUrl },
       update: {

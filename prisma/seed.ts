@@ -45,6 +45,10 @@ function mapDifficulty(raw: string): Difficulty {
   throw new Error(`Unknown difficulty: ${raw}`);
 }
 
+function normalizeLeetcodeUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
 function parseTopics(raw: string): string[] {
   if (!raw || raw.trim() === "") return [];
   return raw
@@ -117,13 +121,14 @@ async function seedCompany(companyName: string): Promise<number> {
         const frequency = parseFloat(row.frequency) || 0;
         const acceptanceRate = parseFloat(row.acceptanceRate) || 0;
         const topics = parseTopics(row.topics);
+        const normalizedUrl = normalizeLeetcodeUrl(row.link);
 
         const question = await prisma.question.upsert({
-          where: { leetcodeUrl: row.link },
+          where: { leetcodeUrl: normalizedUrl },
           update: { title: row.title, difficulty, acceptanceRate, topics },
           create: {
             title: row.title,
-            leetcodeUrl: row.link,
+            leetcodeUrl: normalizedUrl,
             difficulty,
             acceptanceRate,
             topics,

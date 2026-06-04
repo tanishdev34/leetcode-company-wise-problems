@@ -121,3 +121,14 @@ Applied in: [[pages#company-detail-companiesslug]], [[pages#search-search]], [[p
 - `bun run dev` uses Turbopack for fast development
 - `postinstall` hook auto-generates Prisma client (see [[configuration#package-scripts]])
 - Format before commit (Prettier with `prettier-plugin-tailwindcss`)
+
+## LeetCode URL Normalization
+
+All `leetcodeUrl` values stored in the database **must** be normalized (trailing slashes stripped) to prevent duplicate `Question` records. Use the `normalizeLeetcodeUrl()` helper from `lib/utils.ts`:
+
+```typescript
+import { normalizeLeetcodeUrl } from "@/lib/utils"
+const url = normalizeLeetcodeUrl(`https://leetcode.com/problems/${slug}/`)
+```
+
+**Applies to:** seed script (`prisma/seed.ts`), admin actions (`actions/admin.ts`), extension API (`app/api/extension/add-solution/route.ts`), sync API (`app/api/sync/route.ts`).

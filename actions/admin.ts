@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Difficulty, TimePeriod } from "../generated/prisma/client";
+import { normalizeLeetcodeUrl } from "@/lib/utils";
 
 async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -49,7 +50,7 @@ export async function addQuestion(data: {
     });
 
     const question = await prisma.question.upsert({
-      where: { leetcodeUrl: data.leetcodeUrl },
+      where: { leetcodeUrl: normalizeLeetcodeUrl(data.leetcodeUrl) },
       update: {
         title: data.title,
         difficulty: data.difficulty as Difficulty,
@@ -58,7 +59,7 @@ export async function addQuestion(data: {
       },
       create: {
         title: data.title,
-        leetcodeUrl: data.leetcodeUrl,
+        leetcodeUrl: normalizeLeetcodeUrl(data.leetcodeUrl),
         difficulty: data.difficulty as Difficulty,
         topics: data.topics.split(",").map((t) => t.trim()).filter(Boolean),
         acceptanceRate: data.acceptanceRate,
@@ -122,7 +123,7 @@ export async function addQuestionsFromCSV(
         }
 
         const question = await prisma.question.upsert({
-          where: { leetcodeUrl: row.leetcodeUrl },
+          where: { leetcodeUrl: normalizeLeetcodeUrl(row.leetcodeUrl) },
           update: {
             title: row.title,
             difficulty: diffRaw as Difficulty,
@@ -131,7 +132,7 @@ export async function addQuestionsFromCSV(
           },
           create: {
             title: row.title,
-            leetcodeUrl: row.leetcodeUrl,
+            leetcodeUrl: normalizeLeetcodeUrl(row.leetcodeUrl),
             difficulty: diffRaw as Difficulty,
             topics: row.topics.split(",").map((t) => t.trim()).filter(Boolean),
             acceptanceRate: parseFloat(row.acceptanceRate) || 0,
