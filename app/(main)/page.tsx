@@ -117,7 +117,7 @@ export default async function HomePage() {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold">Top Companies</h2>
           <Link
-            href="/companies"
+            href="/library"
             className="text-sm text-primary hover:underline"
           >
             View all →

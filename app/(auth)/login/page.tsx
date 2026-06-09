@@ -2,10 +2,10 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 
 function safeRedirect(value: string | undefined): string {
-  if (!value) return "/dashboard";
+  if (!value) return "/today";
   // Only allow relative paths — prevent open redirect attacks
-  if (!value.startsWith("/")) return "/dashboard";
-  if (value.startsWith("//")) return "/dashboard";
+  if (!value.startsWith("/")) return "/today";
+  if (value.startsWith("//")) return "/today";
   return value;
 }
 
@@ -16,8 +16,8 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   // Prefer "redirect" (from extension), fall back to "callbackUrl" (from middleware)
-  const redirectUrl = safeRedirect(params.redirect ?? params.callbackUrl ?? "/dashboard");
-  const safeRedirectParam = redirectUrl !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectUrl)}` : "";
+  const redirectUrl = safeRedirect(params.redirect ?? params.callbackUrl ?? "/today");
+  const safeRedirectParam = redirectUrl !== "/today" ? `?redirect=${encodeURIComponent(redirectUrl)}` : "";
 
   return (
     <div className="flex flex-col gap-6">

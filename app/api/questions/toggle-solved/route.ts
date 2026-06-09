@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { autoScheduleAfterSolve } from "@/actions/review"
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,6 +34,9 @@ export async function POST(req: NextRequest) {
           solvedAt: becomingSolved ? new Date() : null,
         },
       })
+      if (becomingSolved) {
+        await autoScheduleAfterSolve(questionId)
+      }
       return NextResponse.json({
         success: true,
         data: { solved: updated.solved, solvedAt: updated.solvedAt },
@@ -42,6 +46,7 @@ export async function POST(req: NextRequest) {
     const created = await prisma.userQuestion.create({
       data: { userId, questionId, solved: true, solvedAt: new Date() },
     })
+    await autoScheduleAfterSolve(questionId)
     return NextResponse.json({
       success: true,
       data: { solved: created.solved, solvedAt: created.solvedAt },

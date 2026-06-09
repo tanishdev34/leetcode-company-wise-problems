@@ -10,22 +10,16 @@ import { ChevronDown, Command, Loader2, Menu, X } from "lucide-react";
 import { CommandPalette } from "./command-palette";
 
 const PRIMARY_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/planner", label: "Planner" },
+  { href: "/today", label: "Today" },
+  { href: "/roadmaps", label: "Roadmaps" },
+  { href: "/library", label: "Library" },
   { href: "/reviews", label: "Reviews" },
-  { href: "/playground", label: "Playground" },
 ];
 
 const MORE_LINKS = [
-  { href: "/stats", label: "Stats" },
-  { href: "/readiness", label: "Readiness" },
-  { href: "/learning", label: "Learning Graph" },
-  { href: "/memory", label: "Mistake Memory" },
-  { href: "/reports", label: "Study Reports" },
-  { href: "/whiteboard", label: "Whiteboard" },
   { href: "/coach", label: "AI Coach" },
   { href: "/interview", label: "Mock Interview" },
-  { href: "/codeforces", label: "Codeforces" },
+  { href: "/memory", label: "Mistake Memory" },
 ];
 
 export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
@@ -53,7 +47,7 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
         <Link
           href="/"
-          className="rounded-sm font-bold tracking-tight whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded-sm font-heading font-bold tracking-tight whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={() => setOpen(false)}
         >
           LC Tracker
@@ -80,9 +74,6 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
 
         {/* Desktop nav */}
         <div className="hidden min-w-0 flex-1 items-center gap-4 md:flex">
-          <Link href="/companies" className="text-sm text-muted-foreground hover:text-foreground">
-            Companies
-          </Link>
           {session?.user ? (
             <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-1">
@@ -179,49 +170,31 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
         <div className="md:hidden border-t bg-background">
           <div className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-3">
             <SearchBar />
-            <Link href="/companies" className="py-2 text-sm" onClick={() => setOpen(false)}>
-              Companies
-            </Link>
             {session?.user ? (
               <>
-                <Link href="/dashboard" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Dashboard
+                <Link href="/today" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Today
                 </Link>
-                <Link href="/stats" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Stats
+                <Link href="/roadmaps" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Roadmaps
                 </Link>
-                <Link href="/planner" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Planner
-                </Link>
-                <Link href="/reviews" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Reviews
-                </Link>
-                <Link href="/readiness" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Readiness
-                </Link>
-                <Link href="/learning" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Learning Graph
-                </Link>
-                <Link href="/memory" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Mistake Memory
-                </Link>
-                <Link href="/reports" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Reports
-                </Link>
-                <Link href="/playground" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Playground
-                </Link>
-                <Link href="/whiteboard" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Whiteboard
+                <Link href="/library" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Library
                 </Link>
                 <Link href="/coach" className="py-2 text-sm" onClick={() => setOpen(false)}>
                   Coach
                 </Link>
+                <Link href="/reviews" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Reviews
+                </Link>
                 <Link href="/interview" className="py-2 text-sm" onClick={() => setOpen(false)}>
                   Interview
                 </Link>
-                <Link href="/codeforces" className="py-2 text-sm" onClick={() => setOpen(false)}>
-                  Codeforces
+                <Link href="/memory" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Mistake Memory
+                </Link>
+                <Link href="/settings" className="py-2 text-sm" onClick={() => setOpen(false)}>
+                  Settings
                 </Link>
                 {isAdmin && (
                   <Link

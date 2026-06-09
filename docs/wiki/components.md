@@ -2,6 +2,8 @@
 
 > **See also:** [[pages]] | [[actions]] | [[architecture]]
 
+> **Removed in the June 2026 redesign:** StatsOverview, CompanyProgress, LeetcodeStats (+ SolvedProgress, ContestStats, SubmissionHeatmap, SkillBars, RecentSolvedList), CodeforcesProfile (+ CodeforcesUserCard, RatingHistoryChart, ContestHistoryTable), LearningGraphView, StudyPlanner, CodePlaygroundView, ReadinessScores, StudyReportView, WhiteboardView, CompaniesFilter. Their pages were removed too — see [[pages]].
+
 ## New Components (v2 — May 2026)
 
 ```
@@ -26,16 +28,6 @@ Interview Room (/interview)                  [[pages]]
 ```
 
 ```
-Planner (/planner)                         [[pages]]
-└── StudyPlanner                           [[components#studyplanner]]
-    ├── Plan list (sidebar card)
-    │   └── Plan cards → select → show detail
-    └── Plan detail view
-        ├── Day sections (Sunday–Saturday)
-        │   ├── Add Question button → Dialog with search
-        │   └── Question items with checkbox + delete
-        └── Delete plan button
-
 Reviews (/reviews)                         [[pages]]
 └── ReviewQueue                            [[components#reviewqueue]]
     ├── Stats cards (due, total, up-to-date)
@@ -44,43 +36,10 @@ Reviews (/reviews)                         [[pages]]
         ├── Question title + difficulty + review count
         └── Confidence buttons (1–5)
 
-Readiness (/readiness)                     [[pages]]
-└── ReadinessScores                        [[components#readinessscores]]
-    ├── Overall score card (Progress bar)
-    └── Company list
-        └── Per-company cards → link to /companies/[slug]
-
-Learning Graph (/learning)                 [[pages]]
-└── LearningGraphView                      [[components#learning-graph]]
-    ├── Weak/strong topic summary cards
-    ├── Review pressure card
-    └── React Flow graph (topic → question → company)
-
-Reports (/reports)                         [[pages]]
-└── StudyReportView                        [[components#study-reports]]
-    ├── Weekly metric cards
-    ├── Highlights
-    ├── Recommended next actions
-    ├── Company focus
-    └── Topic momentum
-
 Mistake Memory (/memory)                   [[pages]]
 └── MistakeMemoryView                      [[components#mistake-memory]]
     ├── Recurring mistake patterns
     └── Recommended next moves
-
-Code Playground (/playground)               [[pages]]
-└── CodePlaygroundView                     [[components#code-playground]]
-    ├── JavaScript and C++ language tabs
-    ├── solve(...) / void solve() editor
-    ├── JSON test case editor
-    └── Per-case JS output or C++ compiler/runtime output
-
-Whiteboard (/whiteboard)                    [[pages]]
-└── WhiteboardView                         [[components#whiteboard]]
-    ├── SVG drawing surface
-    ├── Color/width controls
-    └── localStorage save/restore
 
 Admin System Map (/admin/system-map)        [[pages]]
 └── SystemMapView                          [[components#system-map]]
@@ -121,30 +80,11 @@ Search (/search)                       [[pages#search-search]]
 └── SearchResults                      [[components#search]]
     └── Result items + DifficultyBadge
 
-Dashboard (/dashboard)                 [[pages#dashboard-dashboard]]
-├── StatsOverview                      [[components#dashboard]]
-├── Quick links (to /stats, /codeforces) [[components#dashboard]]
-├── Linked Accounts
-│   ├── LeetCodeUsernameForm            [[components#dashboard]]
-│   ├── CodeforcesUsernameForm          [[components#codeforces]]
-│   └── EmailSubscriptionToggle         [[components#dashboard]]
-└── CompanyProgress                    [[components#dashboard]]
-
-Stats (/stats)                         [[pages#stats-leetcode-stats]]
-├── LeetcodeUsernameForm               [[components#dashboard]]
-└── LeetcodeStats                      [[components#dashboard]]
-    ├── SolvedProgress                 [[components#dashboard]]
-    ├── ContestStats                   [[components#dashboard]]
-    ├── SubmissionHeatmap              [[components#dashboard]]
-    ├── SkillBars                      [[components#dashboard]]
-    └── RecentSolvedList               [[components#dashboard]]
-
-Codeforces (/codeforces)               [[pages#codeforces-codeforces]]
-├── CodeforcesUsernameForm             [[components#codeforces]]
-└── CodeforcesProfile                  [[components#codeforces]]
-    ├── CodeforcesUserCard             [[components#codeforces]]
-    ├── RatingHistoryChart             [[components#codeforces]]
-    └── ContestHistoryTable            [[components#codeforces]]
+Settings (/settings)                   [[pages]]
+└── SettingsView                       [[components#settings]]
+    ├── LeetcodeUsernameForm           [[components#settings]]
+    ├── CodeforcesUsernameForm         [[components#settings]]
+    └── EmailSubscriptionToggle        [[components#settings]]
 
 Question Detail (/questions/[id])      [[pages]]
 ├── Checkbox                           → [[actions#toggleSolved]]
@@ -168,7 +108,6 @@ Question Detail (/questions/[id])      [[pages]]
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `CompanyCard` | `company-card.tsx` | `name, slug, questionCount, solvedCount?` | [[pages#landing-page]], [[pages#companies-list-companies]] | Direct Prisma SSR |
-| `CompanyProgress` | `company-progress.tsx` | `companies: { name, solved, total }[]` | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
 | `TimePeriodTabs` | `time-period-tabs.tsx` | `value: TimePeriod, onChange` | [[pages#company-detail-companiesslug]] | Filters [[actions#getCompanyQuestions]] by [[data-model#timeperiod-enum]] |
 
 ### Questions
@@ -179,7 +118,6 @@ Question Detail (/questions/[id])      [[pages]]
 | `QuestionDetail` | `question-detail.tsx` | `questionId, isAuthenticated` | Inside `QuestionRow` (expandable) | [[actions#getNotes]] (lazy-loaded) |
 | `NoteEditor` | `note-editor.tsx` | `questionId, initialNotes` | [[pages]], `QuestionDetail` | [[actions#saveNotes]] (debounced auto-save) |
 | `DifficultyBadge` | `difficulty-badge.tsx` | `difficulty: "EASY" \| "MEDIUM" \| "HARD"` | Multiple | Renders [[data-model#enums]] difficulty |
-| `RecentSolvedList` | `recent-solved-list.tsx` | `submissions[], count, slugToQuestionId?` | [[pages#dashboard-dashboard]] (rendered inside `LeetCodeStats`) | LeetCode submissions API; links to local `/questions/{id}` when slug is in `slugToQuestionId`, else falls back to leetcode.com |
 
 ### Search
 | Component | File | Props | Used On | Data Source |
@@ -187,27 +125,15 @@ Question Detail (/questions/[id])      [[pages]]
 | `SearchBar` | `search-bar.tsx` | `className?, placeholder?` | [[pages#landing-page]], [[pages#search-search]] | Debounced 300ms → navigates to `/search?q=...` |
 | `SearchResults` | `search-results.tsx` | `results[], query, loading?` | [[pages#search-search]] | [[actions#get-apisearchqpage1pagesize20]] |
 
-### Dashboard
+### Settings
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
-| `StatsOverview` | `stats-overview.tsx` | `totalSolved, byDifficulty` | [[pages#dashboard-dashboard]] | [[actions#getDashboardStats]] |
-| `LeetCodeStats` | `leetcode-stats.tsx` | `username, slugToQuestionId?` | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-stats]] API; passes `slugToQuestionId` down to `RecentSolvedList` so the merged "Recently Solved" view can link to local question pages |
-| `SubmissionHeatmap` | `submission-heatmap.tsx` | — | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-calendar]] API |
-| `SkillBars` | `skill-bars.tsx` | — | [[pages#stats-leetcode-stats]] | — |
-| `ContestStats` | `contest-stats.tsx` | — | [[pages#stats-leetcode-stats]] | — |
-| `SolvedProgress` | `solved-progress.tsx` | — | [[pages#stats-leetcode-stats]] | — |
-| `DailyProblemCard` | `daily-problem-card.tsx` | — | [[pages#stats-leetcode-stats]] | [[actions#get-leetcode-daily]] API |
-| `LeetCodeUsernameForm` | `leetcode-username-form.tsx` | — | [[pages#dashboard-dashboard]], [[pages#stats-leetcode-stats]] | [[actions#profilets]], [[actions#sync]] |
-| `EmailSubscriptionToggle` | `email-subscription-toggle.tsx` | — | [[pages#dashboard-dashboard]] | [[actions#emailts]] |
-
-### Codeforces
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `CodeforcesUserCard` | `codeforces-user-card.tsx` | `handle, rating?, maxRating?, rank?, maxRank?, avatar?, titlePhoto?, contribution, lastOnlineTimeSeconds?, registrationTimeSeconds?` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesuserhandle]] API |
-| `RatingHistoryChart` | `rating-history-chart.tsx` | `data: { contestName, rating, date, rank }[]` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesratinghandle]] API; Recharts `LineChart` with CF rank tier reference lines |
-| `ContestHistoryTable` | `contest-history-table.tsx` | `entries: ContestEntry[]` | [[pages#codeforces-codeforces]] (rendered inside `CodeforcesProfile`) | [[actions#get-apicodeforcesratinghandle]] API; shows contest name, rank, old/new rating, delta, date |
-| `CodeforcesProfile` | `codeforces-profile.tsx` | `handle: string` | [[pages#codeforces-codeforces]] | Fetches both `/api/codeforces/user` and `/api/codeforces/rating`; renders `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable` |
-| `CodeforcesUsernameForm` | `codeforces-username-form.tsx` | `initialValue?: string` | [[pages#dashboard-dashboard]], [[pages#codeforces-codeforces]] | [[actions#codeforcests]] `saveCodeforcesUsername` |
+| `SettingsView` | `settings-view.tsx` | — | [[pages]] `/settings` | Renders `LeetcodeUsernameForm`, `CodeforcesUsernameForm`, `EmailSubscriptionToggle` |
+| `LeetcodeUsernameForm` | `leetcode-username-form.tsx` | — | [[pages]] `/settings` (inside `SettingsView`) | [[actions#profilets]], [[actions#sync]] |
+| `CodeforcesUsernameForm` | `codeforces-username-form.tsx` | `initialValue?: string` | [[pages]] `/settings` (inside `SettingsView`) | [[actions#codeforcests]] `saveCodeforcesUsername` |
+| `EmailSubscriptionToggle` | `email-subscription-toggle.tsx` | — | [[pages]] `/settings` (inside `SettingsView`) | [[actions#emailts]] |
+| `DailyProblemCard` | `daily-problem-card.tsx` | — | [[pages]] | [[actions#get-leetcode-daily]] API |
+| `SyncSolvedButton` | `sync-solved-button.tsx` | `username: string \| null` | [[pages]] `/today` (rendered in `TodayView` header) | `POST /api/sync` — syncs the user's accepted LeetCode submissions and marks matching questions solved |
 
 ### Auth
 | Component | File | Props | Used On | Data Source |
@@ -219,11 +145,6 @@ Question Detail (/questions/[id])      [[pages]]
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `AdminQuestionsForm` | `admin-questions-form.tsx` | — | [[pages#admin-adminquestions]] | [[actions#admints]] |
-
-### Study Planner
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `StudyPlanner` | `study-planner.tsx` | — | [[pages]] `/planner` | [[actions#studyplanner]] `getStudyPlans()`, `getStudyPlanDetail()`, `createStudyPlan()`, `addPlanItem()`, `updatePlanItemStatus()`, `removePlanItem()`, `deleteStudyPlan()`, `searchQuestionsForPlan()` |
 
 ### Offline Banner
 | Component | File | Props | Used On | Data Source |
@@ -241,35 +162,10 @@ Question Detail (/questions/[id])      [[pages]]
 
 **Offline behavior:** When `getDueReviews()` fails and `navigator.onLine` is `false`, the component loads cached reviews from IndexedDB via `getCachedReviews()` and shows an inline "Offline — showing cached data" indicator with the last-synced timestamp.
 
-### Readiness Scores
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `ReadinessScores` | `readiness-scores.tsx` | — | [[pages]] `/readiness` | [[actions#readinessts]] `getReadinessScores()` |
-
-### Learning Graph
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `LearningGraphView` | `learning-graph-view.tsx` | — | [[pages]] `/learning` | [[actions#actionslearning-graphts]] `getLearningGraph()` |
-
-### Study Reports
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `StudyReportView` | `study-report-view.tsx` | — | [[pages]] `/reports` | [[actions#actionsstudy-reportts]] `getWeeklyStudyReport()` |
-
 ### Mistake Memory
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
 | `MistakeMemoryView` | `mistake-memory-view.tsx` | — | [[pages]] `/memory` | [[actions#actionsmistake-memoryts]] `getMistakeMemory()` |
-
-### Code Playground
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `CodePlaygroundView` | `code-playground-view.tsx` | — | [[pages]] `/playground` | `lib/code-playground.ts`, `POST /api/playground/cpp`, `lib/cpp-playground.ts` |
-
-### Whiteboard
-| Component | File | Props | Used On | Data Source |
-|-----------|------|-------|---------|-------------|
-| `WhiteboardView` | `whiteboard-view.tsx` | — | [[pages]] `/whiteboard` | `lib/whiteboard.ts` + localStorage |
 
 ### System Map
 | Component | File | Props | Used On | Data Source |
@@ -279,7 +175,7 @@ Question Detail (/questions/[id])      [[pages]]
 ### Command Palette
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
-| `CommandPalette` | `command-palette.tsx` | `isAdmin?: boolean, isAuthenticated?: boolean` | [[components#layout]] Navbar | — (static page list, includes `/learning`, `/reports`, and admin `/admin/system-map`) |
+| `CommandPalette` | `command-palette.tsx` | `isAdmin?: boolean, isAuthenticated?: boolean` | [[components#layout]] Navbar | — (static page list, includes admin `/admin/system-map`) |
 
 ### Interview Room
 | Component | File | Props | Used On | Data Source |
@@ -332,9 +228,4 @@ Installed via `shadcn CLI`. Pattern: `import { Button } from "@/components/ui/bu
 | CompanyGrid | 12 Skeleton cards | "No companies found" | [[pages#companies-list-companies]] |
 | QuestionTable | 10 Skeleton rows | "No questions for this time period" | [[pages#company-detail-companiesslug]] |
 | SearchResults | 5 Skeleton rows | "No results found for '{query}'" | [[pages#search-search]] |
-| Dashboard Stats | Skeleton cards | "Start solving problems to see your progress!" | [[pages#dashboard-dashboard]] |
-| CompanyProgress | Skeleton bars | "Solve some problems to track your progress" | [[pages#dashboard-dashboard]] |
 | QuestionDetail (unauthenticated) | — | "Sign in to write notes and track progress." | [[pages#company-detail-companiesslug]] |
-| CodeforcesProfile | 3 Skeleton cards | "Link your Codeforces account to view your stats" / error card with Retry button | [[pages#codeforces-codeforces]] |
-| RatingHistoryChart | Empty card "No contest history available" | Empty card "No contest history available" | [[pages#codeforces-codeforces]] |
-| ContestHistoryTable | Empty card "No contest history available" | Empty card "No contest history available" | [[pages#codeforces-codeforces]] |

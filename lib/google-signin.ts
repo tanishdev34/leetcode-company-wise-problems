@@ -32,7 +32,7 @@ async function ensureGoogleAuthInitialized() {
   return initPromise;
 }
 
-export async function signInWithGoogle(callbackURL = "/dashboard") {
+export async function signInWithGoogle(callbackURL = "/today") {
   if (await isCapacitorNative()) {
     await ensureGoogleAuthInitialized();
     const { GoogleAuth } = await import(

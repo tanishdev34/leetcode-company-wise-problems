@@ -39,3 +39,5 @@ next-env.d.ts
 /generated/prisma
 
 .DS_Store
+
+questions

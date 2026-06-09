@@ -27,7 +27,7 @@ export function RegisterForm() {
       setLoading("idle");
       return;
     }
-    router.push("/dashboard");
+    router.push("/today");
     router.refresh();
   }
 
@@ -35,7 +35,7 @@ export function RegisterForm() {
     setError("");
     setLoading("google");
     try {
-      const { redirectTo, hardReload } = await signInWithGoogle("/dashboard");
+      const { redirectTo, hardReload } = await signInWithGoogle("/today");
       if (hardReload) return;
       if (redirectTo) {
         router.push(redirectTo);

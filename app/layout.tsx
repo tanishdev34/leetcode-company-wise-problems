@@ -1,4 +1,4 @@
-import { Geist, JetBrains_Mono } from "next/font/google"
+import { Doto, JetBrains_Mono } from "next/font/google"
 import Script from "next/script"
 
 import "./globals.css"
@@ -7,12 +7,13 @@ import { MobilePullToRefresh } from "@/components/mobile-pull-to-refresh"
 import { OfflineBanner } from "@/components/offline-banner"
 import { cn } from "@/lib/utils";
 
-const fontSans = Geist({
+const doto = Doto({
   subsets: ["latin"],
-  variable: "--font-sans",
+  weight: "variable",
+  variable: "--font-display",
 })
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'})
+const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-sans'})
 
 export default function RootLayout({
   children,
@@ -23,7 +24,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", fontSans.variable, "font-mono", jetbrainsMono.variable)}
+      className={cn("antialiased", doto.variable, "font-sans", jetbrainsMono.variable)}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />

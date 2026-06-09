@@ -16,8 +16,37 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 | [[configuration]] | Environment variables, config files | [[architecture]], [[data-model]], [[pages]], [[actions]] |
 | [[conventions]] | Coding style, naming, patterns | [[actions]], [[components]], [[architecture]] |
 | [[extension]] | Browser extension — Chrome/Edge Manifest V3, data extraction, setup, LC stats | [[actions#post-apiextensionadd-solution]], [[data-model]] |
+| [[future-designs]] | Planning-only design docs for the modern UI cleanup, generated roadmaps, LeetCode GraphQL sync, and OpenRouter AI migration | [[architecture]], [[pages]], [[components]], [[actions]], [[data-model]], [[configuration]] |
 
 ## Changelog
+
+### [2026-06-09] Redesign cleanup — removed orphaned pages, fonts, Today sync
+- **Removed pages** no longer part of the redesign: `/dashboard` (→ `/today`), `/companies` index (→ `/library`), `/stats` (LeetCode sync moved to Today), and feature pages `/codeforces`, `/planner`, `/readiness`, `/learning`, `/reports`, `/playground`, `/whiteboard`. Deleted their now-orphaned view components. See [[pages]] and [[components]].
+- **Sync button** — added `components/sync-solved-button.tsx` (`SyncSolvedButton`) to the Today page header; it POSTs to `/api/sync`. Previously the only sync trigger lived on the now-deleted `/stats` page.
+- **Fonts/contrast** — `Doto` (dotted) is now used only for headings and the "LC Tracker" brand (`--font-display`); body text switched to `JetBrains Mono` (`--font-sans`) for legibility. Bumped dark-theme `--muted-foreground`, `--border`, `--input`, and `--sidebar-border` for higher contrast. See [[conventions#styling]].
+- **Redirects/nav** — post-login redirect now targets `/today` (was `/dashboard`); navbar, mobile nav, command palette, and middleware updated to drop removed routes.
+
+### [2026-06-08] OpenRouter AI SDK migration docs
+- Added a planning-only design doc for moving AI analysis and solution review from Crof to OpenRouter through `@ai-sdk/openai`.
+- Added an implementation plan that centralizes provider setup in `lib/ai.ts`, uses `OPENROUTER_API_KEY`, and reads `OPENROUTER_MODEL` from `.env` so the model can be changed without code edits.
+- Updated [[future-designs]] to link the OpenRouter design and plan.
+
+### [2026-06-08] June 2026 cleanup wave — Roadmaps, GraphQL Sync, macOS UI
+- **Roadmap Planner** — new `/roadmaps` page with multi-roadmap study planner. See [[data-model#roadmap]], [[data-model#roadmapitem]], [[data-model#roadmapevent]], and [[actions#roadmaps]]. Replaces manual weekly planner with generated daily question assignments.
+- **LeetCode GraphQL Sync** — `POST /api/sync` now uses direct LeetCode GraphQL (`lib/leetcode-graphql.ts`) instead of `alfa-leetcode-api`. Hydrates missing questions immediately via GraphQL. Added [[data-model#syncrun]] and `Question.titleSlug`.
+- **OpenRouter AI Migration** — replaced Crof AI with OpenRouter via `@ai-sdk/openai`. `OPENROUTER_MODEL` env var controls model selection. See `lib/ai.ts`.
+- **macOS UI Redesign** — new sidebar navigation (`components/sidebar.tsx`) for authenticated users. Added `/today`, `/library`, `/settings` pages. Primary nav: Today, Roadmaps, Library, Coach. Old routes preserved for backward compat.
+- **Today page** — command center showing active roadmaps, due reviews, recently solved. See `components/today-view.tsx`.
+- **Library page** — unified browser for companies and topics. See `components/library-view.tsx`.
+- **Coach consolidation** — merged review queue into Coach page. See `components/coach-view.tsx`.
+- **Settings page** — account info, linked accounts, notifications. See `components/settings-view.tsx`.
+- Updated middleware, navbar, command palette, and mobile navigation for new routes.
+
+### [2026-06-08] Planning docs for modern UI cleanup, roadmaps, and GraphQL sync
+- Added planning-only design docs for a macOS-style product simplification pass, reducing the app toward Today, Roadmaps, Library, Coach, and Settings.
+- Added a generated multi-roadmap planner design that replaces the manual weekly planner with company/topic/deadline-based plans assigning exact questions per day.
+- Added a LeetCode GraphQL sync design to replace `alfa-leetcode-api` in solved-question sync and hydrate missing question metadata immediately while leaving solution-code capture to the extension.
+- Added [[future-designs]] as the wiki entry point for these planning docs and their research references.
 
 ### [2026-05-25] C++ playground runner
 - Extended `/playground` from a JavaScript-only test pad into a language-tabbed code playground with JavaScript and C++ modes.

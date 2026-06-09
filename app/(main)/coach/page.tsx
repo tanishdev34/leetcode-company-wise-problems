@@ -1,22 +1,20 @@
-import { AiInterviewCoachWrapper } from "./coach-wrapper"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { CoachView } from "@/components/coach-view"
 
 export const metadata = {
-  title: "AI Interview Coach — LC Tracker",
-  description: "Get AI-powered feedback on your solutions",
+  title: "Coach — LC Tracker",
+  description: "Feedback, patterns, and review in one place",
 }
 
-export default function CoachPage() {
+export default async function CoachPage() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) redirect("/login")
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">AI Interview Coach</h1>
-        <p className="mt-2 text-muted-foreground">
-          Select a question you&apos;ve worked on and get structured feedback on your
-          solution, including correctness, complexity, edge cases, and follow-up
-          questions.
-        </p>
-      </div>
-      <AiInterviewCoachWrapper />
+    <div className="mx-auto max-w-4xl px-4 py-6">
+      <CoachView />
     </div>
   )
 }

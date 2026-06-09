@@ -38,6 +38,8 @@ model User {
   studyPlans       StudyPlan[]
   reviewItems      ReviewItem[]
   interviewSessions InterviewSession[]
+  roadmaps          Roadmap[]
+  syncRuns          SyncRun[]
   emailVerified    Boolean          @default(false)
   role             String           @default("user")
   leetcodeUsername    String?
@@ -88,6 +90,7 @@ model Company {
   name             String            @unique
   slug             String            @unique
   companyQuestions CompanyQuestion[]
+  roadmaps         Roadmap[]
 
   @@index([slug])
 }
@@ -95,6 +98,7 @@ model Company {
 model Question {
   id               String            @id @default(cuid())
   title            String
+  titleSlug        String?           @unique
   leetcodeUrl      String            @unique
   difficulty       Difficulty
   topics           String[]
@@ -107,6 +111,7 @@ model Question {
   studyPlanItems   StudyPlanItem[]
   reviewItems      ReviewItem[]
   interviewSessions InterviewSession[]
+  roadmapItems     RoadmapItem[]
 
   @@index([difficulty])
 }
@@ -272,4 +277,80 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model SyncRun {
+  id            String    @id @default(cuid())
+  userId        String
+  provider      String    @default("leetcode")
+  status        String    @default("pending") // pending | running | done | error
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  matchedCount  Int       @default(0)
+  importedCount Int       @default(0)
+  skippedCount  Int       @default(0)
+  error         String?
+  metadata      Json?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, startedAt])
+  @@map("sync_run")
+}
+
+model Roadmap {
+  id                  String         @id @default(cuid())
+  userId              String
+  name                String
+  status              String         @default("active") // active | paused | completed | archived
+  goalType            String         @default("company") // company | topic | mixed | custom
+  companyId           String?
+  topicSlug           String?
+  startDate           DateTime
+  endDate             DateTime
+  dailyQuestionTarget Int            @default(3)
+  studyDays           Int[]          @default([1, 2, 3, 4, 5])
+  strategy            String         @default("balanced") // balanced | frequency | weak_topic | sprint
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company             Company?       @relation(fields: [companyId], references: [id])
+  items               RoadmapItem[]
+  events              RoadmapEvent[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@map("roadmap")
+}
+
+model RoadmapItem {
+  id           String    @id @default(cuid())
+  roadmapId    String
+  questionId   String
+  plannedDate  DateTime
+  sortOrder    Int       @default(0)
+  status       String    @default("planned") // planned | in_progress | completed | skipped | moved
+  sourceReason String?
+  locked       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  roadmap      Roadmap   @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  question     Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId])
+  @@index([questionId])
+  @@index([roadmapId, plannedDate])
+  @@map("roadmap_item")
+}
+
+model RoadmapEvent {
+  id        String   @id @default(cuid())
+  roadmapId String
+  type      String   // created | rebalanced | paused | resumed | item_completed | item_moved | sync_matched
+  payload   Json?
+  createdAt DateTime @default(now())
+  roadmap   Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@index([roadmapId])
+  @@map("roadmap_event")
 }

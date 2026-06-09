@@ -1,6 +1,15 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
+import { openrouter as openrouterProvider } from "@openrouter/ai-sdk-provider"
 
-export const crof = createAnthropic({
-  baseURL: "https://anthropic.nahcrof.com/v1",
-  apiKey: process.env.CROF_API_KEY,
-})
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL ?? "z-ai/glm-4.5"
+
+export function getAiModel() {
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error("OPENROUTER_API_KEY is required for AI features")
+  }
+  return openrouterProvider(OPENROUTER_MODEL)
+}
+
+export function getAiModelName() {
+  return OPENROUTER_MODEL
+}

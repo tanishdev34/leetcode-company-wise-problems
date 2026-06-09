@@ -15,33 +15,29 @@
 
 | Route | File | Auth | Components Used | Actions Called |
 |-------|------|------|-----------------|----------------|
-| `/` | `app/(main)/page.tsx` | Public (SSR) | [[components#search]] `SearchBar`, [[components#company]] `CompanyCard`, [[components#questions]] `DifficultyBadge` | Direct Prisma (no action) |
-| `/companies` | `app/(main)/companies/page.tsx` | Public (SSR) | [[components#company]] `CompanyCard`, `CompaniesFilter` | Direct Prisma (no action) |
+| `/` | `app/(main)/page.tsx` | Public (SSR) | [[components#search]] `SearchBar`, [[components#company]] `CompanyCard`, [[components#questions]] `DifficultyBadge`. "View all" links to `/library`. | Direct Prisma (no action) |
+| `/today` | `app/(main)/today/page.tsx` | **Auth required** | `TodayView` (quick-stats, active roadmaps, due reviews, recently solved) + `SyncSolvedButton` (LeetCode sync, POST `/api/sync`) | [[actions#roadmaps]], [[actions#reviewts]], direct Prisma |
+| `/roadmaps` | `app/(main)/roadmaps/page.tsx` | **Auth required** | `RoadmapView`, `RoadmapCreateDialog` | [[actions#roadmaps]] |
+| `/library` | `app/(main)/library/page.tsx` | **Auth required** | `LibraryView` (companies + topics browser; links to `/companies/[slug]`, `/search`) | Direct Prisma |
+| `/settings` | `app/(main)/settings/page.tsx` | **Auth required** | `SettingsView` → `LeetcodeUsernameForm`, `CodeforcesUsernameForm`, `EmailSubscriptionToggle` | [[actions#profilets]], [[actions#codeforcests]], [[actions#email]] |
 | `/companies/[slug]` | `app/(main)/companies/[slug]/page.tsx` | Public (CSR) | [[components#company]] `TimePeriodTabs`, [[components#question-table]] `QuestionTable` | [[actions#getCompanyQuestions]] |
 | `/search` | `app/(main)/search/page.tsx` | Public (CSR) | [[components#search]] `SearchBar`, [[components#search]] `SearchResults` | [[actions#get-apisearchqpage1pagesize20]] via fetch |
 | `/questions/[id]` | `app/(main)/questions/[id]/page.tsx` | Public (CSR) | [[components#questions]] `NoteEditor`, `DifficultyBadge`, checkbox | [[actions#getQuestionDetail]], [[actions#getNotes]], [[actions#toggleSolved]] |
-| `/dashboard` | `app/(main)/dashboard/page.tsx` | **Auth required** | [[components#dashboard]] `StatsOverview`, `CompanyProgress`, `LeetCodeUsernameForm`, `CodeforcesUsernameForm`, `EmailSubscriptionToggle`, quick links to [[pages#stats-leetcode-stats]] and [[pages#codeforces-codeforces]] | [[actions#getDashboardStats]], [[actions#profilets]], [[actions#codeforcests]] |
-| `/stats` | `app/(main)/stats/page.tsx` | **Auth required** | [[components#dashboard]] `LeetcodeUsernameForm`, `LeetcodeStats` (solved progress, contest stats, heatmap, skills, recents) | [[actions#get-leetcode-stats]] API, [[actions#get-leetcode-calendar]] API |
-| `/codeforces` | `app/(main)/codeforces/page.tsx` | **Auth required** | [[components#codeforces]] `CodeforcesUsernameForm`, `CodeforcesProfile` (which renders `CodeforcesUserCard`, `RatingHistoryChart`, `ContestHistoryTable`) | [[actions#codeforcests]], [[actions#get-apicodeforcesuserhandle]], [[actions#get-apicodeforcesratinghandle]] |
 | `/admin/questions` | `app/(main)/admin/questions/page.tsx` | **Auth required** | [[components#admin]] `AdminQuestionsForm` | [[actions#admints]] |
-| `/planner` | `app/(main)/planner/page.tsx` | **Auth required** | [[components#studyplanner]] `StudyPlanner` | [[actions#studyplanner]] |
 | `/reviews` | `app/(main)/reviews/page.tsx` | **Auth required** | [[components#reviewqueue]] `ReviewQueue` | [[actions#reviewts]] |
-| `/readiness` | `app/(main)/readiness/page.tsx` | **Auth required** | [[components#readinessscores]] `ReadinessScores` | [[actions#readinessts]] |
-| `/learning` | `app/(main)/learning/page.tsx` | **Auth required** | [[components#learning-graph]] `LearningGraphView` | [[actions#actionslearning-graphts]] |
 | `/memory` | `app/(main)/memory/page.tsx` | **Auth required** | [[components#mistake-memory]] `MistakeMemoryView` | [[actions#actionsmistake-memoryts]] |
-| `/reports` | `app/(main)/reports/page.tsx` | **Auth required** | [[components#study-reports]] `StudyReportView` | [[actions#actionsstudy-reportts]] |
-| `/playground` | `app/(main)/playground/page.tsx` | **Auth required** | [[components#code-playground]] `CodePlaygroundView` | Client-side `lib/code-playground.ts`, server C++ runner `POST /api/playground/cpp` |
-| `/whiteboard` | `app/(main)/whiteboard/page.tsx` | **Auth required** | [[components#whiteboard]] `WhiteboardView` | Client-side `lib/whiteboard.ts` + localStorage |
-| `/coach` | `app/(main)/coach/page.tsx` | **Auth required** | [[components#aiinterviewcoach]] `AiInterviewCoachWrapper`, `AiInterviewCoach` | [[actions#solution-review-actions]] via fetch |
+| `/coach` | `app/(main)/coach/page.tsx` | **Auth required** | `CoachView` (spaced-repetition reviews, links to `/reviews`, `/interview`, `/memory`) | [[actions#reviewts]] |
 | `/interview` | `app/(main)/interview/page.tsx` | **Auth required** | [[components#interview-room]] `InterviewRoom` | [[actions#actionsinterviewts]] `startInterview()`, `completeInterview()`, `cancelInterview()`, `getInterviewHistory()`, `getRandomQuestion()` |
 | `/admin/system-map` | `app/(main)/admin/system-map/page.tsx` | **Admin required** | [[components#system-map]] `SystemMapView` | [[actions#actionssystem-mapts]] |
+
+> **Removed in the redesign (June 2026):** `/dashboard` (→ `/today`), `/companies` index (→ `/library`), `/stats` (LeetCode sync moved to the `SyncSolvedButton` on `/today`), and the standalone feature pages `/codeforces`, `/planner`, `/readiness`, `/learning`, `/reports`, `/playground`, `/whiteboard`. Their view components were deleted; the underlying API routes and server actions for some still exist but are no longer surfaced in the UI.
 
 ### API Routes
 
 | Route | File | Auth | Called By | Description |
 |-------|------|------|-----------|-------------|
 | `GET /api/search?q=&page=` | `app/api/search/route.ts` | Public | [[components#search]] `SearchBar` → [[pages#search-search]] | pg_trgm fuzzy search |
-| `POST /api/sync` | `app/api/sync/route.ts` | **Auth required** | [[components#dashboard]] `LeetCodeUsernameForm` | Sync LeetCode submissions |
+| `POST /api/sync` | `app/api/sync/route.ts` | **Auth required** | `SyncSolvedButton` on `/today` | Sync LeetCode submissions |
 | `GET /api/leetcode/stats?username=` | `app/api/leetcode/stats/route.ts` | Public | [[components#dashboard]] `LeetCodeStats` | LeetCode user stats (Redis cached) |
 | `GET /api/leetcode/calendar?username=` | `app/api/leetcode/calendar/route.ts` | Public | [[components#dashboard]] `SubmissionHeatmap` | LeetCode calendar (Redis cached) |
 | `GET /api/leetcode/daily` | `app/api/leetcode/daily/route.ts` | Public | [[components#dashboard]] `DailyProblemCard` | Daily LeetCode problem |
@@ -77,9 +73,9 @@
 
 ## Route Protection
 
-- **Middleware** (`middleware.ts`) protects `/dashboard`, `/admin`, `/stats`, `/codeforces`, `/planner`, `/reviews`, `/readiness`, `/learning`, `/memory`, `/reports`, `/playground`, `/whiteboard`, `/coach`, and `/interview` by checking for Better Auth session cookie. See [[configuration#config-files]].
+- **Middleware** (`middleware.ts`) protects `/admin`, `/reviews`, `/memory`, `/coach`, `/interview`, `/roadmaps`, `/today`, `/library`, and `/settings` by checking for Better Auth session cookie. See [[configuration#config-files]].
 - **Offline support** — The root layout registers a service worker (`/sw.js`) via `Script` tag and links `manifest.json` for PWA standalone mode. The `OfflineBanner` component shows an offline toast on any page. The `ReviewQueue` falls back to IndexedDB cache when offline. See [[architecture#pwa--offline-support]] and [[components#offline-banner]].
-- **Server components** (e.g., dashboard page) call `auth.api.getSession()` server-side and redirect if not authenticated.
+- **Server components** (e.g., the `/today` page) call `auth.api.getSession()` server-side and redirect if not authenticated.
 - **Server actions** call `auth.api.getSession()` and return `{ success: false, error: "Not authenticated" }`. See [[conventions#server-action-pattern]].
 - **Public routes** work without auth; solved status/notes are simply not shown.
 
@@ -89,10 +85,14 @@
 - SSR: fetches top 12 companies (by question count), total counts, last 10 questions via direct Prisma queries.
 - Components: [[components#search]] `SearchBar`, stats cards, [[components#company]] `CompanyCard` grid, recently added list.
 
-### Companies List `/companies`
-- SSR: fetches all companies with question counts.
-- Client-side filter by name (case-insensitive substring match) via `CompaniesFilter`.
-- Links to [[pages#company-detail-companiesslug]].
+### Today `/today`
+- Auth required. Landing page for authenticated users (post-login redirect target).
+- Renders `TodayView`: quick-stats row, active roadmaps, due reviews, recently solved (deep-links to `/questions/[id]`).
+- Header includes `SyncSolvedButton`, which POSTs to `/api/sync` to pull the user's accepted LeetCode submissions and mark matching questions solved.
+
+### Library `/library`
+- Auth required. Browse companies and topics; replaces the old `/companies` index.
+- `LibraryView` links each company to [[pages#company-detail-companiesslug]] and each topic to `/search`.
 
 ### Company Detail `/companies/[slug]`
 - CSR: fetches questions via [[actions#getCompanyQuestions]] server action.
@@ -100,22 +100,9 @@
 - URL search params for bookmarkable state (period + page).
 - **Sorting:** solved questions first (by `solvedAt` desc), then unsolved (by `frequency` desc). See [[actions#getCompanyQuestions-sorting-logic]].
 
-### Dashboard `/dashboard`
-- SSR with auth check: fetches stats via [[actions#getDashboardStats]].
-- Lean layout: shows `StatsOverview`, quick link buttons to [[pages#stats-leetcode-stats]] and [[pages#codeforces-codeforces]], Linked Accounts section ([[components#dashboard]] `LeetCodeUsernameForm` + [[components#codeforces]] `CodeforcesUsernameForm` + `EmailSubscriptionToggle`), and `CompanyProgress`.
-- The heavy stats components (`LeetCodeStats`, `SubmissionHeatmap`, `SkillBars`, `ContestStats`, `SolvedProgress`, `DailyProblemCard`) have been moved off the dashboard to dedicated [[pages#stats-leetcode-stats]] page for a faster, cleaner dashboard experience.
-- `LeetCodeUsernameForm` for linking LeetCode profile (triggers [[actions#sync]] via POST `/api/sync`).
-- `CodeforcesUsernameForm` for linking Codeforces handle (calls [[actions#codeforcests]] `saveCodeforcesUsername`).
-
-### Stats `/stats`
-- Auth required. Shows LeetCode username form or full LeetCode stats.
-- Fetches data from [[actions#get-leetcode-stats]] and [[actions#get-leetcode-calendar]] APIs.
-- Computes `slugToQuestionId` map from user's question set so the `RecentSolvedList` can deep-link to local question pages.
-
-### Codeforces `/codeforces`
-- Auth required. Shows Codeforces username form or profile.
-- Profile includes: [[components#codeforces]] `CodeforcesUserCard` (avatar, handle, rating, rank, contribution), `RatingHistoryChart` (Recharts line chart with rank tier reference lines), and `ContestHistoryTable` (contest name, rank, rating changes, date).
-- Data proxied through [[actions#get-apicodeforcesuserhandle]] and [[actions#get-apicodeforcesratinghandle]] (Redis cached).
+### Settings `/settings`
+- Auth required. Account and integrations settings.
+- `SettingsView` renders `LeetcodeUsernameForm` (links profile, used by the Today sync), `CodeforcesUsernameForm`, and `EmailSubscriptionToggle`.
 
 ### Search `/search`
 - CSR with debounced search input (300ms).
@@ -128,31 +115,10 @@
 - [[components#admin]] `AdminQuestionsForm`: single question import by LeetCode URL, CSV file upload.
 - Calls [[actions#admints]] `importQuestion()` and `bulkImportCSV()`.
 
-### Learning Graph `/learning`
-- Auth required. Renders [[components#learning-graph]] `LearningGraphView`.
-- Uses React Flow (`@xyflow/react`) to visualize topic → question → company relationships, plus weak-topic, strong-topic, and due-review summaries.
-- Calls [[actions#actionslearning-graphts]] `getLearningGraph()`, which derives graph data from `Question`, `CompanyQuestion`, `UserQuestion`, and `ReviewItem`.
-
-### Reports `/reports`
-- Auth required. Renders [[components#study-reports]] `StudyReportView`.
-- Shows a generated weekly study report with solved count, hard problems, due/completed reviews, interview sessions, company focus, topic momentum, highlights, and recommended next actions.
-- Calls [[actions#actionsstudy-reportts]] `getWeeklyStudyReport()`.
-
 ### Mistake Memory `/memory`
 - Auth required. Renders [[components#mistake-memory]] `MistakeMemoryView`.
 - Builds recurring mistake patterns from solution reviews, low-confidence reviews, and mock interview reflections.
 - Calls [[actions#actionsmistake-memoryts]] `getMistakeMemory()`.
-
-### Code Playground `/playground`
-- Auth required. Renders [[components#code-playground]] `CodePlaygroundView`.
-- JavaScript mode lets users define a `solve(...)` function and run JSON test cases client-side via [[actions]]-free helper `lib/code-playground.ts`.
-- C++ mode lets users define `void solve()`, sends stdin/stdout-style tests to authenticated `POST /api/playground/cpp`, and displays Wandbox compiler/runtime output.
-- This is a lightweight foundation for the later WebContainers or persisted code-runner work.
-
-### Whiteboard `/whiteboard`
-- Auth required. Renders [[components#whiteboard]] `WhiteboardView`.
-- Provides a lightweight localStorage-backed SVG sketchpad for DSA traces, recursion trees, graph traversal notes, and interview scratch work.
-- Uses `lib/whiteboard.ts` for serialization/deserialization and board summaries.
 
 ### System Map `/admin/system-map`
 - Admin required. Renders [[components#system-map]] `SystemMapView`.

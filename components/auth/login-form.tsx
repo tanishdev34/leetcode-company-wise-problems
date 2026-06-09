@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
-export function LoginForm({ redirectUrl = "/dashboard" }: { redirectUrl?: string }) {
+export function LoginForm({ redirectUrl = "/today" }: { redirectUrl?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

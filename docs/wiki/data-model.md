@@ -10,6 +10,8 @@ User ──< UserQuestion >── Question ──< CompanyQuestion >── Compa
 User ──< StudyPlan >── StudyPlanItem >── Question
 User ──< ReviewItem >── Question
 User ──< InterviewSession >── Question
+User ──< Roadmap >── RoadmapItem >── Question
+User ──< SyncRun
 ```
 
 Each relation:
@@ -245,6 +247,68 @@ Lifecycle:
 2. Updated by `completeInterview()` (sets `status: "completed"`, `endedAt`, `rating`, `notes`, `reflection`)
 3. Updated by `cancelInterview()` (sets `status: "cancelled"`, `endedAt`)
 4. Read by `getInterviewHistory()` (ordered by `startedAt` desc, max 50)
+
+### Roadmap
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `userId` | String | FK → User |
+| `name` | String | Roadmap name |
+| `status` | String | `active`, `paused`, `completed`, `archived` |
+| `goalType` | String | `company`, `topic`, `mixed`, `custom` |
+| `companyId` | String? | FK → Company (if company goal) |
+| `topicSlug` | String? | Topic slug (if topic goal) |
+| `startDate` | DateTime | Start date |
+| `endDate` | DateTime | Deadline |
+| `dailyQuestionTarget` | Int | Questions per study day (default 3) |
+| `studyDays` | Int[] | Days of week 0-6 (default Mon-Fri) |
+| `strategy` | String | `balanced`, `frequency`, `weak_topic`, `sprint` |
+
+Relations: `user`, `company`, `items`, `events`
+Created by: [[actions#roadmaps]] `createRoadmap()`
+
+### RoadmapItem
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `roadmapId` | String | FK → Roadmap |
+| `questionId` | String | FK → Question |
+| `plannedDate` | DateTime | Assigned study date |
+| `sortOrder` | Int | Order within day |
+| `status` | String | `planned`, `in_progress`, `completed`, `skipped`, `moved` |
+| `sourceReason` | String? | Why assigned: `company-frequency`, `weak-topic`, etc. |
+| `locked` | Boolean | User-pinned (rebalance won't move) |
+
+Managed by: [[actions#roadmaps]] `completeRoadmapItem()`, `moveRoadmapItem()`, `rebalanceRoadmap()`
+
+### RoadmapEvent
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `roadmapId` | String | FK → Roadmap |
+| `type` | String | `created`, `rebalanced`, `paused`, `resumed`, `item_completed`, `item_moved`, `sync_matched` |
+| `payload` | Json? | Event data |
+| `createdAt` | DateTime | Auto-set |
+
+### SyncRun
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | String (cuid) | Primary key |
+| `userId` | String | FK → User |
+| `provider` | String | `leetcode` |
+| `status` | String | `pending`, `running`, `done`, `error` |
+| `startedAt` | DateTime | Auto-set |
+| `finishedAt` | DateTime? | When completed |
+| `matchedCount` | Int | Questions matched |
+| `importedCount` | Int | New questions imported |
+| `skippedCount` | Int | Questions skipped (paid-only, etc.) |
+| `error` | String? | Error message |
+| `metadata` | Json? | Additional data |
+
+Used by: [[actions#sync]] `POST /api/sync`
+
+### Question (updated)
+Added `titleSlug` field — stable slug for direct LeetCode GraphQL lookups. Unique. Backfilled from `leetcodeUrl`.
 
 ### Verification
 Better Auth verification model (email verification). See [[configuration#better-auth]].

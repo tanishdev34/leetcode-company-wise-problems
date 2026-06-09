@@ -8,7 +8,7 @@ function sleep(ms: number) {
 
 async function runSolutionReview(code: string, language: string, title: string) {
   const { generateText, Output } = await import("ai")
-  const { crof } = await import("@/lib/ai")
+  const { getAiModel } = await import("@/lib/ai")
   const { z } = await import("zod")
 
   const schema = z.object({
@@ -24,7 +24,7 @@ async function runSolutionReview(code: string, language: string, title: string) 
   })
 
   const { output } = await generateText({
-    model: crof("glm-4.7-flash"),
+    model: getAiModel(),
     output: Output.object({ schema }),
     prompt: `You are a technical interviewer reviewing a candidate's solution to the problem "${title}". Analyze the following ${language} code and provide interview-style feedback.
 

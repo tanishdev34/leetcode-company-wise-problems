@@ -8,12 +8,15 @@ export async function GET(req: NextRequest) {
   if (!username)
     return NextResponse.json({ error: "Missing username" }, { status: 400 })
 
-  const cacheKey = `leetcode:calendar:${username}`
+  const refresh = req.nextUrl.searchParams.get("refresh") === "true";
+  const cacheKey = `leetcode:calendar:${username}`;
 
-  try {
-    const cached = await redis.get(cacheKey)
-    if (cached) return NextResponse.json(cached)
-  } catch {}
+  if (!refresh) {
+    try {
+      const cached = await redis.get(cacheKey)
+      if (cached) return NextResponse.json(cached)
+    } catch {}
+  }
 
   try {
     const res = await fetch(`${BASE}/${username}/calendar`)

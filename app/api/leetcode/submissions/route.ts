@@ -7,12 +7,15 @@ export async function GET(req: NextRequest) {
   const username = req.nextUrl.searchParams.get("username");
   if (!username) return NextResponse.json({ error: "Missing username" }, { status: 400 });
 
+  const refresh = req.nextUrl.searchParams.get("refresh") === "true";
   const cacheKey = `leetcode:submissions:${username}`;
 
-  try {
-    const cached = await redis.get(cacheKey);
-    if (cached) return NextResponse.json(cached);
-  } catch {}
+  if (!refresh) {
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) return NextResponse.json(cached);
+    } catch {}
+  }
 
   try {
     const res = await fetch(`${BASE}/${username}/acSubmission`);

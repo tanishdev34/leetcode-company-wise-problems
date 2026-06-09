@@ -43,6 +43,8 @@ See `tsconfig.json` path aliases in [[configuration#config-files]].
 - shadcn components use `cn()` utility for conditional classes
 - Dark mode via `next-themes` and Tailwind's `dark:` variant
 - Custom animations in `components/` ([[components#animation-components-react-bits]])
+- **Fonts** (`app/layout.tsx` + `app/globals.css`): `Doto` (dotted pixel font) is bound to `--font-display` and used ONLY for headings (`h1`–`h6` get it via a base rule in `globals.css`) and the "LC Tracker" brand (add `font-heading`). `JetBrains Mono` is the default body font (`--font-sans`, applied via the `font-sans` class on `<html>`) and also backs `--font-mono`. Do not use `Doto` for body text — its sparse dots are illegible at small sizes.
+- **Theme tokens** live in `:root` / `.dark` in `globals.css`. When adjusting contrast, prefer raising token lightness/opacity (`--muted-foreground`, `--border`, `--input`, `--sidebar-border`) over hardcoding colors in components.
 
 ## Project Structure Rules
 

@@ -29,15 +29,16 @@ This project has a maintained wiki at **`docs/wiki/`** containing comprehensive 
 
 ## AI / LLM Configuration
 
-This project uses **Crof AI** as the LLM provider for AI analysis and interview coach features. The Anthropic-compatible endpoint is used via `@ai-sdk/anthropic`.
+This project uses **OpenRouter** as the LLM provider for AI analysis and interview coach features through the dedicated AI SDK provider (`@openrouter/ai-sdk-provider`).
 
 | Endpoint | Type | Provider Package |
 |----------|------|-----------------|
-| `https://anthropic.nahcrof.com/v1` | Anthropic-compatible | `@ai-sdk/anthropic` (via `createAnthropic({ baseURL: "https://anthropic.nahcrof.com/v1" })`) |
+| `https://openrouter.ai/api/v1` | OpenRouter native | `@openrouter/ai-sdk-provider` |
 
-The API key is read from the `CROF_API_KEY` environment variable.
+The API key is read from `OPENROUTER_API_KEY`.
+The active model is read from `OPENROUTER_MODEL` (default: `z-ai/glm-4.5`), so model changes don't require code edits.
 
-> **Usage pattern**: A shared client is configured in `lib/ai.ts` and imported by both workers. Both the analysis worker (`lib/analyze.ts`) and solution review worker (`lib/solution-review.ts`) use `crof("glm-4.7-flash")` for model inference.
+> **Usage pattern**: A shared helper is configured in `lib/ai.ts` and imported by both workers. Both the analysis worker (`lib/analyze.ts`) and solution review worker (`lib/solution-review.ts`) use `getAiModel()` for model inference.
 
 ## Key Conventions
 
