@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { TimePeriod } from "../generated/prisma/client"
 import { autoScheduleAfterSolve } from "./review"
+import { checkAiRateLimit, recordAiUsage } from "@/lib/ai"
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -384,10 +385,18 @@ export async function getNotes(
 
 export async function enqueueSolutionReview(
   questionId: string
-): Promise<ActionResult<{ jobId: string; status: string }>> {
+): Promise<ActionResult<{ jobId: string; status: string; remaining: number }>> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return { success: false, error: "Not authenticated" }
+
+    const { allowed, remaining } = await checkAiRateLimit(
+      session.user.id,
+      session.user.role ?? "user"
+    )
+    if (!allowed) {
+      return { success: false, error: "Daily AI limit reached. Try again tomorrow." }
+    }
 
     // Get the user's code for this question
     const uq = await prisma.userQuestion.findUnique({
@@ -411,7 +420,7 @@ export async function enqueueSolutionReview(
     if (existingActive) {
       return {
         success: true,
-        data: { jobId: existingActive.id, status: existingActive.status },
+        data: { jobId: existingActive.id, status: existingActive.status, remaining },
       }
     }
 
@@ -425,13 +434,15 @@ export async function enqueueSolutionReview(
       },
     })
 
+    await recordAiUsage(session.user.id, "solution_review")
+
     // Fire and forget the processing
     const { processSolutionReview } = await import("@/lib/solution-review")
     processSolutionReview(job.id).catch((err) =>
       console.error("processSolutionReview failed:", err)
     )
 
-    return { success: true, data: { jobId: job.id, status: "pending" } }
+    return { success: true, data: { jobId: job.id, status: "pending", remaining: remaining - 1 } }
   } catch {
     return { success: false, error: "Failed to enqueue solution review" }
   }

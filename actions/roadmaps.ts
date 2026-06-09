@@ -3,80 +3,235 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
-import { generateRoadmapItems } from "@/lib/roadmap-generator"
+import { after } from "next/server"
+import { generateAiRoadmapPlan } from "@/lib/roadmap-ai-planner"
+import type { RoadmapIntensity } from "@/lib/roadmap-ai-schemas"
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string }
-
-export async function createRoadmap(input: {
-  name: string
-  goalType: string
+type RoadmapCreateInput = {
+  prompt: string
   companyId?: string
   topicSlug?: string
-  startDate: string
-  endDate: string
-  dailyQuestionTarget: number
-  studyDays: number[]
-  strategy: string
-}): Promise<ActionResult<{ id: string; itemCount: number }>> {
+  deadline?: string
+  intensity?: "relaxed" | "balanced" | "aggressive"
+}
+
+export async function createRoadmap(input: RoadmapCreateInput): Promise<ActionResult<{ id: string; itemCount: number; feasibility: string; summary: string }>> {
+  const startedAt = Date.now()
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return { success: false, error: "Not authenticated" }
 
-    if (!input.name.trim()) return { success: false, error: "Name is required" }
-    if (new Date(input.endDate) <= new Date(input.startDate)) return { success: false, error: "End date must be after start date" }
+    if (!input.prompt.trim()) {
+      return { success: false, error: "Describe what you want to prepare for" }
+    }
+
+    if (input.prompt.length > 1000) {
+      return { success: false, error: "Roadmap prompt must be 1000 characters or less" }
+    }
+
+    const intensity: RoadmapIntensity = input.intensity ?? "balanced"
+    const prompt = input.prompt.trim()
+    const now = new Date()
+    const fallbackEndDate = new Date(now)
+    fallbackEndDate.setDate(fallbackEndDate.getDate() + 21)
 
     const roadmap = await prisma.roadmap.create({
       data: {
         userId: session.user.id,
-        name: input.name.trim(),
-        goalType: input.goalType,
+        name: draftRoadmapName(prompt),
+        goalType: "custom",
         companyId: input.companyId || null,
         topicSlug: input.topicSlug || null,
-        startDate: new Date(input.startDate),
-        endDate: new Date(input.endDate),
-        dailyQuestionTarget: input.dailyQuestionTarget,
-        studyDays: input.studyDays,
-        strategy: input.strategy,
+        startDate: now,
+        endDate: input.deadline ? new Date(`${input.deadline}T00:00:00`) : fallbackEndDate,
+        prompt,
+        intensity,
+        aiSummary: "Designing your roadmap from your goal, progress, and question history.",
+        feasibility: "realistic",
+        feasibilityNote: null,
+        generationStatus: "running",
       },
     })
-
-    const items = await generateRoadmapItems({
-      userId: session.user.id,
-      goalType: input.goalType as "company" | "topic" | "mixed" | "custom",
-      companyId: input.companyId,
-      topicSlug: input.topicSlug,
-      startDate: new Date(input.startDate),
-      endDate: new Date(input.endDate),
-      dailyQuestionTarget: input.dailyQuestionTarget,
-      studyDays: input.studyDays,
-      strategy: input.strategy as "balanced" | "frequency" | "weak_topic" | "sprint",
+    logRoadmapTiming(roadmap.id, "draft:create", startedAt, {
+      promptLength: prompt.length,
+      intensity,
     })
 
-    if (items.length > 0) {
-      await prisma.roadmapItem.createMany({
-        data: items.map((item) => ({
-          roadmapId: roadmap.id,
-          questionId: item.questionId,
-          plannedDate: item.plannedDate,
-          sortOrder: item.sortOrder,
-          sourceReason: item.sourceReason,
-        })),
-      })
-    }
-
+    const eventStartedAt = Date.now()
     await prisma.roadmapEvent.create({
       data: {
         roadmapId: roadmap.id,
-        type: "created",
-        payload: { itemCount: items.length, strategy: input.strategy },
+        type: "ai_generation_started",
+        payload: {
+          prompt,
+          intensity,
+          deadline: input.deadline ?? null,
+        },
       },
     })
+    logRoadmapTiming(roadmap.id, "event:ai_generation_started", eventStartedAt)
 
-    return { success: true, data: { id: roadmap.id, itemCount: items.length } }
+    after(async () => {
+      await generateRoadmapInBackground({
+        roadmapId: roadmap.id,
+        userId: session.user.id,
+        input: { ...input, prompt, intensity },
+      })
+    })
+    logRoadmapTiming(roadmap.id, "scheduled", startedAt)
+
+    return {
+      success: true,
+      data: {
+        id: roadmap.id,
+        itemCount: 0,
+        feasibility: "realistic",
+        summary: "Designing your roadmap in the background.",
+      },
+    }
   } catch (e) {
     console.error("createRoadmap error:", e)
     return { success: false, error: "Failed to create roadmap" }
   }
+}
+
+async function generateRoadmapInBackground(params: {
+  roadmapId: string
+  userId: string
+  input: RoadmapCreateInput & { prompt: string; intensity: RoadmapIntensity }
+}) {
+  const startedAt = Date.now()
+  logRoadmapEvent(params.roadmapId, "background:start", {
+    intensity: params.input.intensity,
+    hasCompany: Boolean(params.input.companyId),
+    hasTopic: Boolean(params.input.topicSlug),
+    hasDeadline: Boolean(params.input.deadline),
+  })
+  try {
+    const plannerStartedAt = Date.now()
+    const { plan, warnings } = await generateAiRoadmapPlan({
+      userId: params.userId,
+      prompt: params.input.prompt,
+      companyId: params.input.companyId,
+      topicSlug: params.input.topicSlug,
+      deadline: params.input.deadline,
+      intensity: params.input.intensity,
+      traceId: params.roadmapId,
+    })
+    logRoadmapTiming(params.roadmapId, "planner:complete", plannerStartedAt, {
+      days: plan.days.length,
+      items: plan.days.reduce((sum, day) => sum + day.items.length, 0),
+      warnings: warnings.length,
+    })
+
+    const itemCount = plan.days.reduce((sum, day) => sum + day.items.length, 0)
+
+    const persistStartedAt = Date.now()
+    await prisma.$transaction(async (tx) => {
+      await tx.roadmapItem.deleteMany({
+        where: { roadmapId: params.roadmapId },
+      })
+
+      await tx.roadmap.update({
+        where: { id: params.roadmapId },
+        data: {
+          name: plan.name,
+          goalType: plan.goalType,
+          topicSlug: params.input.topicSlug || plan.inferredTopicSlug || null,
+          startDate: new Date(`${plan.startDate}T12:00:00`),
+          endDate: new Date(`${plan.endDate}T12:00:00`),
+          intensity: plan.intensity,
+          aiSummary: plan.summary,
+          aiPlanJson: plan,
+          feasibility: plan.feasibility.status,
+          feasibilityNote: plan.feasibility.message,
+          generationStatus: "done",
+          generationError: null,
+        },
+      })
+
+      if (itemCount > 0) {
+        await tx.roadmapItem.createMany({
+          data: plan.days.flatMap((day) =>
+            day.items.map((item) => ({
+              roadmapId: params.roadmapId,
+              questionId: item.questionId,
+              plannedDate: new Date(`${day.date}T12:00:00`),
+              sortOrder: item.order,
+              sourceReason: item.reason.slice(0, 180),
+              aiReason: item.reason,
+              itemType: item.itemType,
+              dayTheme: day.theme,
+            }))
+          ),
+        })
+      }
+
+      await tx.roadmapEvent.create({
+        data: {
+          roadmapId: params.roadmapId,
+          type: "ai_generated",
+          payload: {
+            itemCount,
+            feasibility: plan.feasibility,
+            warnings,
+          },
+        },
+      })
+    })
+    logRoadmapTiming(params.roadmapId, "persist:complete", persistStartedAt, {
+      itemCount,
+    })
+    logRoadmapTiming(params.roadmapId, "background:complete", startedAt, {
+      itemCount,
+    })
+  } catch (e) {
+    console.error(`[roadmap:${params.roadmapId}] background:error`, e)
+    const errorPersistStartedAt = Date.now()
+    await prisma.roadmap.update({
+      where: { id: params.roadmapId },
+      data: {
+        generationStatus: "error",
+        generationError: e instanceof Error ? e.message : "Failed to generate roadmap",
+        aiSummary: "Roadmap generation failed before assignments were created.",
+      },
+    })
+    await prisma.roadmapEvent.create({
+      data: {
+        roadmapId: params.roadmapId,
+        type: "generation_failed",
+        payload: {
+          error: e instanceof Error ? e.message : String(e),
+        },
+      },
+    })
+    logRoadmapTiming(params.roadmapId, "error:persist", errorPersistStartedAt)
+    logRoadmapTiming(params.roadmapId, "background:failed", startedAt)
+  }
+}
+
+function logRoadmapTiming(
+  roadmapId: string,
+  step: string,
+  startedAt: number,
+  meta: Record<string, unknown> = {}
+) {
+  console.log(`[roadmap:${roadmapId}] ${step} ${Date.now() - startedAt}ms`, meta)
+}
+
+function logRoadmapEvent(
+  roadmapId: string,
+  step: string,
+  meta: Record<string, unknown> = {}
+) {
+  console.log(`[roadmap:${roadmapId}] ${step}`, meta)
+}
+
+function draftRoadmapName(prompt: string) {
+  const cleaned = prompt.replace(/\s+/g, " ").trim()
+  if (!cleaned) return "Designing your roadmap"
+  return cleaned.length > 54 ? `${cleaned.slice(0, 51)}...` : cleaned
 }
 
 export async function getRoadmaps(): Promise<ActionResult<{
@@ -90,7 +245,12 @@ export async function getRoadmaps(): Promise<ActionResult<{
     endDate: Date
     totalItems: number
     completedItems: number
-    dailyQuestionTarget: number
+    intensity: string
+    feasibility: string
+    generationStatus: string
+    generationError: string | null
+    aiSummary: string | null
+    prompt: string | null
   }[]
 }>> {
   try {
@@ -120,7 +280,12 @@ export async function getRoadmaps(): Promise<ActionResult<{
           endDate: r.endDate,
           totalItems: r._count.items,
           completedItems: r.items.length,
-          dailyQuestionTarget: r.dailyQuestionTarget,
+          intensity: r.intensity,
+          feasibility: r.feasibility,
+          generationStatus: r.generationStatus,
+          generationError: r.generationError,
+          aiSummary: r.aiSummary,
+          prompt: r.prompt,
         })),
       },
     }
@@ -138,9 +303,13 @@ export async function getRoadmapDetail(roadmapId: string): Promise<ActionResult<
   topicSlug: string | null
   startDate: Date
   endDate: Date
-  dailyQuestionTarget: number
-  studyDays: number[]
-  strategy: string
+  prompt: string | null
+  intensity: string
+  aiSummary: string | null
+  feasibility: string
+  feasibilityNote: string | null
+  generationStatus: string
+  generationError: string | null
   items: {
     id: string
     plannedDate: Date
@@ -148,6 +317,9 @@ export async function getRoadmapDetail(roadmapId: string): Promise<ActionResult<
     status: string
     sourceReason: string | null
     locked: boolean
+    itemType: string
+    aiReason: string | null
+    dayTheme: string | null
     question: { id: string; title: string; leetcodeUrl: string; difficulty: string; topics: string[] }
   }[]
   events: { id: string; type: string; payload: unknown; createdAt: Date }[]
@@ -185,9 +357,13 @@ export async function getRoadmapDetail(roadmapId: string): Promise<ActionResult<
         topicSlug: roadmap.topicSlug,
         startDate: roadmap.startDate,
         endDate: roadmap.endDate,
-        dailyQuestionTarget: roadmap.dailyQuestionTarget,
-        studyDays: roadmap.studyDays,
-        strategy: roadmap.strategy,
+        prompt: roadmap.prompt,
+        intensity: roadmap.intensity,
+        aiSummary: roadmap.aiSummary,
+        feasibility: roadmap.feasibility,
+        feasibilityNote: roadmap.feasibilityNote,
+        generationStatus: roadmap.generationStatus,
+        generationError: roadmap.generationError,
         items: roadmap.items.map((item) => ({
           id: item.id,
           plannedDate: item.plannedDate,
@@ -195,6 +371,9 @@ export async function getRoadmapDetail(roadmapId: string): Promise<ActionResult<
           status: item.status,
           sourceReason: item.sourceReason,
           locked: item.locked,
+          itemType: item.itemType,
+          aiReason: item.aiReason,
+          dayTheme: item.dayTheme,
           question: item.question,
         })),
         events: roadmap.events.map((e) => ({
@@ -341,6 +520,24 @@ export async function updateRoadmapStatus(roadmapId: string, status: string): Pr
     return { success: true, data: { success: true } }
   } catch {
     return { success: false, error: "Failed to update roadmap status" }
+  }
+}
+
+export async function deleteRoadmap(roadmapId: string): Promise<ActionResult<{ success: boolean }>> {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user) return { success: false, error: "Not authenticated" }
+
+    const roadmap = await prisma.roadmap.findFirst({
+      where: { id: roadmapId, userId: session.user.id },
+    })
+    if (!roadmap) return { success: false, error: "Roadmap not found" }
+
+    await prisma.roadmap.delete({ where: { id: roadmapId } })
+
+    return { success: true, data: { success: true } }
+  } catch {
+    return { success: false, error: "Failed to delete roadmap" }
   }
 }
 

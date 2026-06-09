@@ -24,7 +24,7 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | `saveCode(questionId, code, language?)` | Yes | `questionId, code (max 50k chars), language?` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `saveHints(questionId, hints)` | Yes | `questionId, hints (max 10k chars)` | `{ success: true }` | [[pages]] `/questions/[id]` | Yes — [[data-model#userquestion-user-progress]] |
 | `getNotes(questionId)` | Yes | `questionId` | `{ notes, code, language, hints }` | [[components#questions]] `QuestionDetail` | No |
-| `enqueueSolutionReview(questionId)` | Yes | `questionId: string` | `{ jobId, status }` | [[components#aiinterviewcoach]] `AiInterviewCoach` | Yes — creates [[data-model#solutionreview]] |
+| `enqueueSolutionReview(questionId)` | Yes | `questionId: string` | `{ jobId, status, remaining }` | [[components#aiinterviewcoach]] `AiInterviewCoach` | Yes — creates [[data-model#solutionreview]]. Rate-limited: 4 AI calls/day for users, unlimited for admins. |
 
 ### `actions/stats.ts` — [[data-model#userquestion-user-progress]], [[data-model#question]]
 
@@ -102,6 +102,26 @@ See [[conventions#server-action-pattern]] for the standard implementation templa
 | Action | Auth | Params | Returns | Called By | Mutates |
 |--------|------|--------|---------|-----------|---------|
 | `getSystemMap()` | **Admin** | — | `{ nodes[], edges[], summary }` from `lib/system-map.ts` | [[components#system-map]] `SystemMapView` | No |
+
+### `actions/roadmaps.ts` — [[data-model#roadmap]], [[data-model#roadmapitem]], [[data-model#roadmapevent]]
+
+| Action | Auth | Params | Returns | Called By | Mutates |
+|--------|------|--------|---------|-----------|---------|
+| `createRoadmap(input)` | Yes | `{ prompt, companyId?, topicSlug?, deadline?, intensity? }` | `{ id, itemCount, feasibility, summary }` | [[components#roadmapcreate]] `RoadmapCreateDialog` | Yes — creates a draft [[data-model#roadmap]] with `generationStatus: "running"`, records `ai_generation_started`, then schedules background AI generation with Next `after()` |
+| `getRoadmaps()` | Yes | — | `{ roadmaps[] }` with `intensity`, `feasibility`, `generationStatus`, `generationError`, `aiSummary`, `prompt` | [[components#roadmapview]] `RoadmapView` | No |
+| `getRoadmapDetail(roadmapId)` | Yes | `roadmapId: string` | Full detail with `prompt`, `intensity`, `aiSummary`, `feasibility`, `feasibilityNote`, `generationStatus`, `generationError`, items with `itemType`, `aiReason`, `dayTheme` | [[components#roadmapview]] `RoadmapView` | No |
+| `completeRoadmapItem(itemId)` | Yes | `itemId: string` | `{ success: true }` | [[components#roadmapview]] `RoadmapView` | Yes — marks item completed, upserts [[data-model#userquestion-user-progress]], creates event |
+| `moveRoadmapItem(itemId, newDate)` | Yes | `itemId, newDate: string` | `{ success: true }` | [[components#roadmapview]] `RoadmapView` | Yes — moves item date, creates event |
+| `rebalanceRoadmap(roadmapId)` | Yes | `roadmapId: string` | `{ moved: number }` | [[components#roadmapview]] `RoadmapView` | Yes — redistributes overdue items to future study days |
+| `updateRoadmapStatus(roadmapId, status)` | Yes | `roadmapId, status: string` | `{ success: true }` | [[components#roadmapview]] `RoadmapView` | Yes — updates status, creates event |
+| `getCompaniesForSelect()` | Yes | — | `{ companies[] }` | [[components#roadmapcreate]] `RoadmapCreateDialog` | No |
+| `getTopicsForSelect()` | Yes | — | `{ topics[] }` | [[components#roadmapcreate]] `RoadmapCreateDialog` | No |
+
+`createRoadmap` validates the prompt (non-empty, max 1000 chars) and returns immediately after creating the draft roadmap, so the modal can close and `RoadmapView` can show the animated background-designing card. The scheduled `generateRoadmapInBackground()` worker calls `generateAiRoadmapPlan()` from `lib/roadmap-ai-planner.ts`, which builds deterministic context via `lib/roadmap-planning-context.ts`, calls OpenRouter through AI SDK `generateText` + `Output.object`, validates output via `lib/roadmap-plan-validator.ts`, then persists the AI plan and marks `generationStatus: "done"`. `buildRoadmapPlanningContext()` uses raw SQL for the candidate list, solved count, and due-review count to avoid loading full user progress/review collections and nested company relations into JS. The roadmap prompts ask the model to omit rest/empty days so token output stays focused on scheduled work. The shared `getAiModel()` helper wraps OpenRouter with AI SDK `extractJsonMiddleware()` to strip Markdown code fences from models that return fenced JSON. If `Output.object()` rejects the model response, `generateAiRoadmapPlan()` reads `NoObjectGeneratedError.text`, parses the raw JSON when possible, and sends it through the repair prompt before failing the roadmap. `itemType: "new"` is normalized to `"new_question"` in `lib/roadmap-ai-schemas.ts`. Failures mark `generationStatus: "error"`, persist `generationError`, and record a `generation_failed` event.
+
+Roadmap generation logs coarse timings to the server console using `[roadmap:<id>]` prefixes. Current stages include `draft:create`, `background:start`, `context:queries`, `context:map`, `planner:prompt`, `planner:model`, `planner:validate`, optional `planner:repair-*`, `persist:complete`, and `background:complete` / `background:failed`.
+
+Roadmap `startDate`, `endDate`, and item `plannedDate` values are written at local noon (`T12:00:00`) instead of midnight so client-side ISO date grouping does not shift planned days backward across time zones.
 
 ### `actions/interview.ts` — [[data-model#interviewsession]]
 
@@ -202,12 +222,13 @@ Returns current user's profile data. Auth required.
 - Called by: [[extension]] background worker (`GET_USER_PROFILE` handler)
 
 ### `POST /api/analyze`
-Enqueues an AI analysis job (admin only) and returns immediately.
-- Auth required, admin only
+Enqueues an AI analysis job and returns immediately.
+- Auth required. Rate-limited: 4 AI calls/day for users, unlimited for admins (shared pool with solution review).
 - Body: `{ questionId: string, code: string, language: string }`
-- Creates an [[data-model#analysisjob-ai-analysis-queue]] row with `status: "pending"`, schedules `processAnalysisJob(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
+- Creates an [[data-model#analysisjob-ai-analysis-queue]] row with `status: "pending"`, schedules `processAnalysisJob(jobId)` via `next/server`'s `after()`, returns `{ jobId, status, remaining }`.
 - If a `pending`/`running` job already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
-- The background worker (`lib/analyze.ts`) calls Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`), merges output into [[data-model#userquestion-user-progress]] `notes`/`hints`, and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- Returns 429 if daily AI limit is reached.
+- The background worker (`lib/analyze.ts`) calls OpenRouter through the shared AI SDK helper in `lib/ai.ts`, merges output into [[data-model#userquestion-user-progress]] `notes`/`hints`, and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
 - Called by: [[components#questions]] `NoteEditor` Generate button.
 
 ### `GET /api/analyze?questionId=`
@@ -224,11 +245,12 @@ Returns overlay summary data for a question by its URL slug.
 
 ### `POST /api/solution-review`
 Enqueues an AI solution review job and returns immediately.
-- Auth required
+- Auth required. Rate-limited: 4 AI calls/day for users, unlimited for admins (shared pool with analysis).
 - Body: `{ questionId: string, code: string, language?: string }`
 - Creates a [[data-model#solutionreview]] row with `status: "pending"`, schedules `processSolutionReview(jobId)` via `next/server`'s `after()`, returns `{ jobId, status }`.
+- Returns 429 if daily AI limit is reached.
 - If a `pending`/`running` review already exists for `(userId, questionId)`, returns the existing `jobId` instead of creating a new one.
-- The background worker (`lib/solution-review.ts`) calls Crof AI (shared `@ai-sdk/anthropic` client in `lib/ai.ts`) with structured output (correctness, time/space complexity, edge cases, explanation, follow-ups, suggestions) and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
+- The background worker (`lib/solution-review.ts`) calls OpenRouter through the shared AI SDK helper in `lib/ai.ts` with structured output (correctness, time/space complexity, edge cases, explanation, follow-ups, suggestions) and retries with exponential backoff (2s, 8s, 30s) up to `maxAttempts` (default 3) on failure.
 - Called by: [[components#aiinterviewcoach]] `AiInterviewCoach` "Review My Solution" button.
 
 ### `GET /api/solution-review?jobId=`

@@ -15,8 +15,8 @@
 | **Auth** | Better Auth (email/password + Google OAuth) | [[configuration#better-auth]], [[components#auth]] |
 | **Search** | PostgreSQL `pg_trgm` extension | [[configuration#search-index]], [[actions#get-apisearchqpage1pagesize20]] |
 | **Caching** | Upstash Redis | [[configuration#environment-variables]] |
-| **AI Analysis** | Crof AI (Anthropic-compatible) via AI SDK (`@ai-sdk/anthropic`, shared client in `lib/ai.ts`) — queued background jobs via `next/server` `after()` with retry/backoff | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]] |
-| **AI Interview Coach** | Crof AI (Anthropic-compatible) via AI SDK — structured interview feedback on saved code | [[actions#post-apisolution-review]], [[data-model#solutionreview]] |
+| **AI Analysis** | OpenRouter via AI SDK (`@openrouter/ai-sdk-provider`, shared model helper in `lib/ai.ts`) — queued background jobs via `next/server` `after()` with retry/backoff — rate-limited: 4 calls/day for users, unlimited for admins | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]], [[data-model#aiusage-ai-rate-limiting]] |
+| **AI Interview Coach** | OpenRouter via AI SDK structured output — same shared `lib/ai.ts` helper and rate limit as AI Analysis | [[actions#post-apisolution-review]], [[data-model#solutionreview]], [[data-model#aiusage-ai-rate-limiting]] |
 | **Email** | React Email (component-based templates) + Nodemailer (transport) | [[actions#emailts]], [[lib/email]] |
 | **PWA / Offline** | Service Worker (`public/sw.js`) + IndexedDB via `idb-keyval` (`lib/offline.ts`) | [[configuration#config-files]] `next.config.mjs` |
 | **Code Execution** | Client-side JavaScript runner + Wandbox-backed C++ compile/run endpoint | [[components#code-playground]], [[actions#post-apiplaygroundcpp]] |

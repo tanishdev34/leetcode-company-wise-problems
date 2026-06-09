@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function RoadmapsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-[1800px] px-4 py-8 sm:px-6">
       <RoadmapView />
     </div>
   )

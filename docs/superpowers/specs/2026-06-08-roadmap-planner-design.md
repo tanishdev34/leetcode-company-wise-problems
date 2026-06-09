@@ -1,6 +1,8 @@
 # Multi-Roadmap Study Planner Design
 
-> **Status:** Planning only. This replaces the current manual weekly planner concept after implementation planning.
+> **Status:** Superseded by `docs/superpowers/specs/2026-06-09-ai-roadmap-planner-design.md`.
+> **Do not implement this manual-input flow for roadmap creation.**
+> **Historical note:** This file is kept as background for the first roadmap concept, but its questions-per-day, study-days, and strategy inputs are no longer the desired product direction.
 > **Goal:** Let the user create multiple company/topic/date-based preparation roadmaps that assign exact questions per day.
 
 ## Problem
@@ -249,4 +251,3 @@ Defer:
 - Sync from LeetCode updates roadmap progress automatically.
 - Rebalancing does not lose completed/manual choices.
 - Wiki documents new models, actions, pages, and migration from `StudyPlan`.
-

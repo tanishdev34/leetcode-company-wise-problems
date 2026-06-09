@@ -20,6 +20,47 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
+### [2026-06-10] Imported saved Amazon roadmap
+- Reused `docs/chats/generation.md` to populate failed roadmap `cmq6z7qa10000ofuq5v7b2t36` without another AI call.
+- Converted the legacy chat shape (`schedule`, `itemType: "new"`, `feasibility.status: "feasible"`) into the current roadmap schema, attached the Amazon company, stored normalized `aiPlanJson`, created 70 `RoadmapItem` rows across 35 study days, and marked generation `done`.
+- Updated roadmap date persistence to write generated dates at local noon (`T12:00:00`) so ISO-based UI grouping does not shift days backward across time zones.
+
+### [2026-06-10] Roadmap generation timing logs
+- Added correlated server-side `console.log` timings for AI roadmap generation using `[roadmap:<id>]` prefixes.
+- Logged draft creation, background start/finish, raw SQL context queries/map, prompt build, model generation, validation, optional repair, DB persistence, and failure persistence.
+- Hardened roadmap parsing so `Output.object()` schema failures can repair from `NoObjectGeneratedError.text` instead of immediately failing; also normalize `itemType: "new"` to `new_question`.
+- Updated [[actions#roadmaps]] with the current timing stage names.
+
+### [2026-06-09] Faster AI roadmap context generation
+- Reworked `lib/roadmap-planning-context.ts` to use compact raw SQL for roadmap candidate retrieval, solved count, and due-review count instead of loading full user progress/review collections and nested company relations through Prisma.
+- Reduced roadmap prompt/output bloat by instructing the model to omit rest days and any day with an empty `items` array.
+- Updated [[actions#roadmaps]] to document the raw SQL context path.
+
+### [2026-06-09] OpenRouter structured JSON hardening
+- Wrapped the shared OpenRouter model helper in `lib/ai.ts` with AI SDK `extractJsonMiddleware()` so `Output.object()` can parse responses from models that wrap JSON in Markdown fences.
+- Strengthened the AI roadmap planner prompts to ask for structured objects without Markdown fences, prose, or commentary.
+- Updated [[configuration]], [[architecture]], and [[actions]] to document the shared OpenRouter helper and JSON extraction behavior.
+
+### [2026-06-09] Background roadmap generation UX
+- `createRoadmap()` now creates a draft roadmap immediately, records `ai_generation_started`, schedules AI plan generation in the background with Next `after()`, and updates `generationStatus` to `done` or `error` when the worker finishes.
+- `RoadmapView` now shows a new roadmap card right away with an animated flowing-root "designing" state, rotating planning verbs, a center "Designing your roadmap" panel, quiet polling, and an error state if generation fails.
+- Updated [[actions#roadmaps]], [[components#roadmaps]], and [[data-model#roadmap]] to document the draft/running/done/error lifecycle.
+
+### [2026-06-09] AI roadmap planner implementation
+- Implemented the AI-first roadmap planner: `createRoadmap()` now accepts a natural-language prompt + optional deadline/company/topic/intensity, calls `lib/roadmap-ai-planner.ts` (AI SDK `generateText` + `Output.object` + Zod), validates output with `lib/roadmap-plan-validator.ts`, and persists AI metadata (`prompt`, `intensity`, `aiSummary`, `aiPlanJson`, `feasibility`, `feasibilityNote`).
+- New files: `lib/roadmap-ai-schemas.ts`, `lib/roadmap-planning-context.ts`, `lib/roadmap-plan-validator.ts`, `lib/roadmap-ai-planner.ts`.
+- Replaced the multi-step manual create dialog with a single-prompt intent-first `RoadmapCreateDialog`.
+- Updated `RoadmapView` to show intensity, feasibility, AI summary, day themes, and item-level AI reasons instead of `x/day`.
+- Added `RoadmapItem` fields: `itemType`, `aiReason`, `dayTheme`.
+- See [[data-model#roadmap]], [[actions#roadmaps]], and `docs/superpowers/specs/2026-06-09-ai-roadmap-planner-design.md`.
+
+### [2026-06-09] AI-first roadmap planner design
+- Added `docs/superpowers/specs/2026-06-09-ai-roadmap-planner-design.md`, superseding the manual roadmap creation flow.
+- Added `docs/superpowers/plans/2026-06-09-ai-roadmap-planner-implementation.md`, an agent-ready implementation plan using AI SDK structured output with Zod, OpenRouter, deterministic validators, and optional AI SDK tool calling if candidate retrieval outgrows one prompt.
+- New roadmap direction: the user gives a natural-language prep goal, while AI decides pacing, schedule, strategy, exact questions, and rebalancing.
+- Marked the older `2026-06-08-roadmap-planner-design.md` as superseded so future agents do not continue the questions-per-day/study-days UI.
+- Updated [[future-designs]] to point roadmap work at the AI-first design.
+
 ### [2026-06-09] Redesign cleanup — removed orphaned pages, fonts, Today sync
 - **Removed pages** no longer part of the redesign: `/dashboard` (→ `/today`), `/companies` index (→ `/library`), `/stats` (LeetCode sync moved to Today), and feature pages `/codeforces`, `/planner`, `/readiness`, `/learning`, `/reports`, `/playground`, `/whiteboard`. Deleted their now-orphaned view components. See [[pages]] and [[components]].
 - **Sync button** — added `components/sync-solved-button.tsx` (`SyncSolvedButton`) to the Today page header; it POSTs to `/api/sync`. Previously the only sync trigger lived on the now-deleted `/stats` page.

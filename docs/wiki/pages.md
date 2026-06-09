@@ -17,7 +17,7 @@
 |-------|------|------|-----------------|----------------|
 | `/` | `app/(main)/page.tsx` | Public (SSR) | [[components#search]] `SearchBar`, [[components#company]] `CompanyCard`, [[components#questions]] `DifficultyBadge`. "View all" links to `/library`. | Direct Prisma (no action) |
 | `/today` | `app/(main)/today/page.tsx` | **Auth required** | `TodayView` (quick-stats, active roadmaps, due reviews, recently solved) + `SyncSolvedButton` (LeetCode sync, POST `/api/sync`) | [[actions#roadmaps]], [[actions#reviewts]], direct Prisma |
-| `/roadmaps` | `app/(main)/roadmaps/page.tsx` | **Auth required** | `RoadmapView`, `RoadmapCreateDialog` | [[actions#roadmaps]] |
+| `/roadmaps` | `app/(main)/roadmaps/page.tsx` | **Auth required** | `RoadmapView`, `RoadmapCreateDialog`; wide `max-w-[1800px]` shell for the three-panel responsive roadmap workspace | [[actions#roadmaps]] |
 | `/library` | `app/(main)/library/page.tsx` | **Auth required** | `LibraryView` (companies + topics browser; links to `/companies/[slug]`, `/search`) | Direct Prisma |
 | `/settings` | `app/(main)/settings/page.tsx` | **Auth required** | `SettingsView` → `LeetcodeUsernameForm`, `CodeforcesUsernameForm`, `EmailSubscriptionToggle` | [[actions#profilets]], [[actions#codeforcests]], [[actions#email]] |
 | `/companies/[slug]` | `app/(main)/companies/[slug]/page.tsx` | Public (CSR) | [[components#company]] `TimePeriodTabs`, [[components#question-table]] `QuestionTable` | [[actions#getCompanyQuestions]] |

@@ -20,9 +20,9 @@ GOOGLE_CLIENT_SECRET="..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
-# AI Analysis — used by [[actions#post-apianalyze]] (admin feature, background queue)
-# Crof AI endpoint (Anthropic-compatible): https://anthropic.nahcrof.com/v1 — model: glm-4.7-flash
-CROF_API_KEY="nahcrof_..."
+# AI — used by analysis, solution review, and AI roadmap generation
+OPENROUTER_API_KEY="..."
+OPENROUTER_MODEL="minimax/minimax-m3"
 
 # SMTP (for email reminders via [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]])
 SMTP_HOST=smtp.gmail.com
@@ -74,6 +74,7 @@ CRON_SECRET=development
 
 | Service | Purpose | Used By | Configuration |
 |---------|---------|---------|---------------|
+| OpenRouter `https://openrouter.ai/api/v1` | LLM provider for structured AI analysis, solution review, and roadmap planning | `lib/ai.ts`, `lib/analyze.ts`, `lib/solution-review.ts`, `lib/roadmap-ai-planner.ts` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`; `lib/ai.ts` wraps the model with AI SDK `extractJsonMiddleware()` so fenced JSON from some models still works with `Output.object()` |
 | Wandbox `https://wandbox.org/api/compile.json` | Remote C++ compile/run service using GCC for playground tests | [[actions#post-apiplaygroundcpp]], [[components#code-playground]] | No env var currently; `app/api/playground/cpp/route.ts` posts directly with `compiler: "gcc-head"` and `options: "warning,gnu++20"` |
 
 ## Prisma

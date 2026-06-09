@@ -3,6 +3,7 @@ import { after } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { processAnalysisJob } from "@/lib/analyze"
+import { checkAiRateLimit, recordAiUsage } from "@/lib/ai"
 
 export const maxDuration = 300
 
@@ -12,10 +13,15 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-    if (session.user.role !== "admin") {
+
+    const { allowed, remaining } = await checkAiRateLimit(
+      session.user.id,
+      session.user.role ?? "user"
+    )
+    if (!allowed) {
       return NextResponse.json(
-        { error: "Only admins can generate analyses" },
-        { status: 403 }
+        { error: "Daily AI limit reached. Try again tomorrow." },
+        { status: 429 }
       )
     }
 
@@ -57,6 +63,8 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    await recordAiUsage(session.user.id, "analysis")
+
     after(async () => {
       try {
         await processAnalysisJob(job.id)
@@ -65,7 +73,7 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ jobId: job.id, status: "pending" })
+    return NextResponse.json({ jobId: job.id, status: "pending", remaining: remaining - 1 })
   } catch (err) {
     console.error("POST /api/analyze error:", err)
     return NextResponse.json(

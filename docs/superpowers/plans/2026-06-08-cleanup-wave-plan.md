@@ -1,6 +1,7 @@
 # June 2026 Cleanup Wave Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Roadmap phase superseded:** Do not implement the manual roadmap steps in Phase 1. Roadmap creation has moved to the AI-first plan in `docs/superpowers/plans/2026-06-09-ai-roadmap-planner-implementation.md`, based on `docs/superpowers/specs/2026-06-09-ai-roadmap-planner-design.md`.
 
 **Goal:** Implement Roadmap Planner, GraphQL Sync, and macOS UI Redesign in sequence.
 
