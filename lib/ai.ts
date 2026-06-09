@@ -1,7 +1,7 @@
 import { openrouter as openrouterProvider } from "@openrouter/ai-sdk-provider"
 
 const OPENROUTER_MODEL =
-  process.env.OPENROUTER_MODEL ?? "z-ai/glm-4.5"
+  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-v4-flash"
 
 export function getAiModel() {
   if (!process.env.OPENROUTER_API_KEY) {
