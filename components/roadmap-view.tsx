@@ -9,8 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   getRoadmaps,
   getRoadmapDetail,
-  completeRoadmapItem,
-  moveRoadmapItem,
+  updateRoadmapItemStatus,
   rebalanceRoadmap,
   updateRoadmapStatus,
   deleteRoadmap,
@@ -18,7 +17,7 @@ import {
 import { RoadmapCreateDialog } from "./roadmap-create-dialog"
 import {
   Plus, Calendar, Target, ChevronRight, RotateCcw,
-  Pause, Play, Archive, ExternalLink, Lock, Unlock, Trash2, Sparkles,
+  Pause, Play, Archive, ExternalLink, Lock, Trash2, Sparkles,
 } from "lucide-react"
 
 const DIFF_COLORS: Record<string, string> = {
@@ -95,6 +94,8 @@ interface RoadmapDetail {
   events: { id: string; type: string; payload: unknown; createdAt: Date }[]
 }
 
+type RoadmapDetailItem = RoadmapDetail["items"][number]
+
 export function RoadmapView() {
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -107,6 +108,7 @@ export function RoadmapView() {
   const [deleting, setDeleting] = useState(false)
   const [designVerbIndex, setDesignVerbIndex] = useState(0)
   const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null)
+  const [completingItemIds, setCompletingItemIds] = useState<Set<string>>(new Set())
 
   const fetchRoadmaps = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true)
@@ -160,12 +162,47 @@ export function RoadmapView() {
     }
   }, [fetchDetail, fetchRoadmaps, hasGeneratingRoadmap, selectedId])
 
-  const handleComplete = async (itemId: string) => {
-    const result = await completeRoadmapItem(itemId)
-    if (result.success && selectedId) {
-      fetchDetail(selectedId)
-      fetchRoadmaps()
+  const handleComplete = async (itemId: string, completed: boolean) => {
+    if (!selectedId || completingItemIds.has(itemId)) return
+
+    const previousDetail = detail
+    const previousRoadmaps = roadmaps
+    const item = detail?.items.find((roadmapItem) => roadmapItem.id === itemId)
+    if (!item || (item.status === "completed") === completed) return
+
+    setCompletingItemIds((ids) => new Set(ids).add(itemId))
+    setDetail((current) => current
+      ? {
+          ...current,
+          items: current.items.map((roadmapItem) =>
+            roadmapItem.id === itemId
+              ? { ...roadmapItem, status: completed ? "completed" : "planned" }
+              : roadmapItem
+          ),
+        }
+      : current
+    )
+    setRoadmaps((current) => current.map((roadmap) =>
+      roadmap.id === selectedId
+        ? {
+            ...roadmap,
+            completedItems: completed
+              ? Math.min(roadmap.totalItems, roadmap.completedItems + 1)
+              : Math.max(0, roadmap.completedItems - 1),
+          }
+        : roadmap
+    ))
+
+    const result = await updateRoadmapItemStatus(itemId, completed)
+    if (!result.success) {
+      setDetail(previousDetail)
+      setRoadmaps(previousRoadmaps)
     }
+    setCompletingItemIds((ids) => {
+      const next = new Set(ids)
+      next.delete(itemId)
+      return next
+    })
   }
 
   const handleRebalance = async () => {
@@ -234,7 +271,7 @@ export function RoadmapView() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">Roadmaps</h1>
-          <p className="text-sm text-muted-foreground">AI-generated study plans tailored to your goals</p>
+          <p className="text-sm text-muted-foreground">Fast study plans tailored to your goals</p>
         </div>
         <Button className="shrink-0 self-start sm:self-auto" onClick={() => setCreateOpen(true)}>
           <Plus className="mr-1.5 h-4 w-4" /> New Roadmap
@@ -385,53 +422,71 @@ export function RoadmapView() {
                 {dayGroups.map(([date, items]) => {
                   const isToday = date === today
                   const isPast = date < today
+                  const isSelected = selectedDay === date
                   const completedCount = items.filter((i) => i.status === "completed").length
                   const allDone = completedCount === items.length
                   const theme = items.find((item) => item.dayTheme)?.dayTheme
+                  const panelId = `roadmap-day-panel-${date}`
 
                   return (
-                    <button
-                      key={date}
-                      type="button"
-                      onClick={() => setSelectedDay(date)}
-                      className={`w-full text-left rounded-md px-3 py-2 transition-colors flex items-center gap-3 ${
-                        selectedDay === date ? "bg-primary/10 border border-primary/30" :
-                        isToday ? "bg-amber-500/10 border border-amber-500/20" :
-                        "hover:bg-accent border border-transparent"
-                      }`}
-                    >
-                      <div className="flex flex-col items-center min-w-[40px]">
-                        <span className="text-[10px] uppercase text-muted-foreground">
-                          {new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" })}
-                        </span>
-                        <span className="text-sm font-bold">
-                          {new Date(date + "T12:00:00").getDate()}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          {items.map((item, idx) => (
-                            <span
-                              key={idx}
-                              className={`inline-block h-2 w-2 rounded-full ${
-                                item.status === "completed" ? "bg-green-400" :
-                                item.status === "skipped" ? "bg-muted-foreground/30" :
-                                isPast ? "bg-amber-400" :
-                                "bg-muted-foreground/20"
-                              }`}
-                            />
-                          ))}
+                    <div key={date} className="space-y-1">
+                      <button
+                        type="button"
+                        aria-expanded={isSelected}
+                        aria-controls={panelId}
+                        onClick={() => setSelectedDay((current) => current === date ? null : date)}
+                        className={`w-full text-left rounded-md px-3 py-2 transition-colors flex items-center gap-3 ${
+                          isSelected ? "bg-primary/10 border border-primary/30" :
+                          isToday ? "bg-amber-500/10 border border-amber-500/20" :
+                          "hover:bg-accent border border-transparent"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center min-w-[40px]">
+                          <span className="text-[10px] uppercase text-muted-foreground">
+                            {new Date(date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" })}
+                          </span>
+                          <span className="text-sm font-bold">
+                            {new Date(date + "T12:00:00").getDate()}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {completedCount}/{items.length} questions
-                          {allDone && " ✓"}
-                        </span>
-                        {theme && (
-                          <span className="block text-[10px] text-muted-foreground/70 truncate">{theme}</span>
-                        )}
-                      </div>
-                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            {items.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className={`inline-block h-2 w-2 rounded-full ${
+                                  item.status === "completed" ? "bg-green-400" :
+                                  item.status === "skipped" ? "bg-muted-foreground/30" :
+                                  isPast ? "bg-amber-400" :
+                                  "bg-muted-foreground/20"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {completedCount}/{items.length} questions
+                            {allDone && " ✓"}
+                          </span>
+                          {theme && (
+                            <span className="block text-[10px] text-muted-foreground/70 truncate">{theme}</span>
+                          )}
+                        </div>
+                        <ChevronRight className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isSelected ? "rotate-90" : ""}`} />
+                      </button>
+                      {isSelected && (
+                        <div
+                          id={panelId}
+                          data-testid={panelId}
+                          className="ml-[52px] rounded-md border border-primary/20 bg-background/80 p-2"
+                        >
+                          <RoadmapDayItemsList
+                            items={items}
+                            completingItemIds={completingItemIds}
+                            onComplete={handleComplete}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
@@ -516,68 +571,11 @@ export function RoadmapView() {
                 No questions for this day
               </div>
             ) : (
-              <div className="space-y-2">
-                {selectedDayItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`rounded-md border p-3 ${
-                      item.status === "completed" ? "bg-green-500/5 border-green-500/20" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      <Checkbox
-                        checked={item.status === "completed"}
-                        onCheckedChange={() => handleComplete(item.id)}
-                        disabled={item.status === "completed"}
-                        className="mt-0.5"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium ${item.status === "completed" ? "line-through opacity-60" : ""}`}>
-                            {item.question.title}
-                          </span>
-                          {item.locked && <Lock className="h-3 w-3 text-muted-foreground" />}
-                          {item.itemType !== "new_question" && (
-                            <Badge variant="outline" className="text-[10px]">
-                              {ITEM_TYPE_LABELS[item.itemType] ?? item.itemType}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className={`text-[10px] ${DIFF_COLORS[item.question.difficulty] ?? ""}`}>
-                            {item.question.difficulty}
-                          </Badge>
-                          {(item.aiReason ?? item.sourceReason) && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {item.aiReason ?? item.sourceReason}
-                            </span>
-                          )}
-                        </div>
-                        {item.question.topics.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {item.question.topics.slice(0, 3).map((t) => (
-                              <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                                {t}
-                              </span>
-                            ))}
-                            {item.question.topics.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground">+{item.question.topics.length - 3}</span>
-                            )}
-                          </div>
-                        )}
-                        <a
-                          href={item.question.leetcodeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 mt-1.5 text-xs text-primary hover:underline"
-                        >
-                          Open on LeetCode <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <RoadmapDayItemsList
+                items={selectedDayItems}
+                completingItemIds={completingItemIds}
+                onComplete={handleComplete}
+              />
             )}
           </CardContent>
         </Card>
@@ -607,6 +605,81 @@ export function RoadmapView() {
           to { stroke-dashoffset: 0; }
         }
       `}</style>
+    </div>
+  )
+}
+
+function RoadmapDayItemsList({
+  items,
+  completingItemIds,
+  onComplete,
+}: {
+  items: RoadmapDetailItem[]
+  completingItemIds: Set<string>
+  onComplete: (itemId: string, completed: boolean) => void
+}) {
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div
+          key={item.id}
+          className={`rounded-md border p-3 ${
+            item.status === "completed" ? "bg-green-500/5 border-green-500/20" : ""
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <Checkbox
+              checked={item.status === "completed"}
+              onCheckedChange={(checked) => onComplete(item.id, checked === true)}
+              disabled={completingItemIds.has(item.id)}
+              className="mt-0.5"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-medium ${item.status === "completed" ? "line-through opacity-60" : ""}`}>
+                  {item.question.title}
+                </span>
+                {item.locked && <Lock className="h-3 w-3 text-muted-foreground" />}
+                {item.itemType !== "new_question" && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {ITEM_TYPE_LABELS[item.itemType] ?? item.itemType}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className={`text-[10px] ${DIFF_COLORS[item.question.difficulty] ?? ""}`}>
+                  {item.question.difficulty}
+                </Badge>
+                {(item.aiReason ?? item.sourceReason) && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {item.aiReason ?? item.sourceReason}
+                  </span>
+                )}
+              </div>
+              {item.question.topics.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {item.question.topics.slice(0, 3).map((t) => (
+                    <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {t}
+                    </span>
+                  ))}
+                  {item.question.topics.length > 3 && (
+                    <span className="text-[10px] text-muted-foreground">+{item.question.topics.length - 3}</span>
+                  )}
+                </div>
+              )}
+              <a
+                href={item.question.leetcodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-1.5 text-xs text-primary hover:underline"
+              >
+                Open on LeetCode <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

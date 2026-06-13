@@ -389,7 +389,10 @@ export async function getRoadmapDetail(roadmapId: string): Promise<ActionResult<
   }
 }
 
-export async function completeRoadmapItem(itemId: string): Promise<ActionResult<{ success: boolean }>> {
+export async function updateRoadmapItemStatus(
+  itemId: string,
+  completed: boolean
+): Promise<ActionResult<{ success: boolean }>> {
   try {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return { success: false, error: "Not authenticated" }
@@ -401,23 +404,33 @@ export async function completeRoadmapItem(itemId: string): Promise<ActionResult<
 
     await prisma.roadmapItem.update({
       where: { id: itemId },
-      data: { status: "completed" },
+      data: { status: completed ? "completed" : "planned" },
     })
 
-    await prisma.userQuestion.upsert({
-      where: { userId_questionId: { userId: session.user.id, questionId: item.questionId } },
-      update: { solved: true, solvedAt: new Date() },
-      create: { userId: session.user.id, questionId: item.questionId, solved: true, solvedAt: new Date() },
-    })
+    if (completed) {
+      await prisma.userQuestion.upsert({
+        where: { userId_questionId: { userId: session.user.id, questionId: item.questionId } },
+        update: { solved: true, solvedAt: new Date() },
+        create: { userId: session.user.id, questionId: item.questionId, solved: true, solvedAt: new Date() },
+      })
+    }
 
     await prisma.roadmapEvent.create({
-      data: { roadmapId: item.roadmapId, type: "item_completed", payload: { itemId, questionId: item.questionId } },
+      data: {
+        roadmapId: item.roadmapId,
+        type: completed ? "item_completed" : "item_uncompleted",
+        payload: { itemId, questionId: item.questionId },
+      },
     })
 
     return { success: true, data: { success: true } }
   } catch {
-    return { success: false, error: "Failed to complete item" }
+    return { success: false, error: "Failed to update item" }
   }
+}
+
+export async function completeRoadmapItem(itemId: string): Promise<ActionResult<{ success: boolean }>> {
+  return updateRoadmapItemStatus(itemId, true)
 }
 
 export async function moveRoadmapItem(itemId: string, newDate: string): Promise<ActionResult<{ success: boolean }>> {

@@ -80,7 +80,7 @@ export async function buildRoadmapPlanningContext(input: {
         COALESCE(MAX(CASE WHEN ri."nextReviewAt" <= ${now} THEN 1 ELSE 0 END), 0) DESC,
         COALESCE(MAX(cq.frequency), 0) DESC,
         q.title ASC
-      LIMIT 160
+      LIMIT 500
     `,
   ])
   logRoadmapTiming(traceId, "context:queries", queryStartedAt, {

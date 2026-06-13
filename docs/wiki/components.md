@@ -138,12 +138,14 @@ Question Detail (/questions/[id])      [[pages]]
 ### Roadmaps
 | Component | File | Props | Used On | Data Source |
 |-----------|------|-------|---------|-------------|
-| `RoadmapView` | `roadmap-view.tsx` | — | [[pages]] `/roadmaps` | [[actions#roadmaps]] `getRoadmaps()`, `getRoadmapDetail()`, `completeRoadmapItem()`, `rebalanceRoadmap()`, `updateRoadmapStatus()` |
+| `RoadmapView` | `roadmap-view.tsx` | — | [[pages]] `/roadmaps` | [[actions#roadmaps]] `getRoadmaps()`, `getRoadmapDetail()`, `updateRoadmapItemStatus()`, `rebalanceRoadmap()`, `updateRoadmapStatus()` |
 | `RoadmapCreateDialog` | `roadmap-create-dialog.tsx` | `open`, `onOpenChange`, `onCreated(id)` | [[pages]] `/roadmaps` inside `RoadmapView` | [[actions#roadmaps]] `createRoadmap()`, `getCompaniesForSelect()`, `getTopicsForSelect()` |
 
 **Roadmap generation behavior:** `RoadmapCreateDialog` accepts one natural-language goal plus optional company/topic/deadline/intensity. `createRoadmap()` now returns after creating a draft roadmap, so the dialog closes quickly and `RoadmapView` selects the new roadmap immediately. While `generationStatus` is `pending` or `running`, the left roadmap card shows an animated flowing-root visual and rotating verb line, the center pane shows a "Designing your roadmap" panel, and the inspector explains that the user can leave the page. The transient designing panel is guarded by a real newly-created roadmap id, so the empty first-load state stays empty. `RoadmapView` quietly polls every 2.5 seconds until generation completes or fails, without replacing the whole page with skeleton loading states.
 
-**Roadmap layout behavior:** `/roadmaps` uses a wider `max-w-[1800px]` route shell. `RoadmapView` stays single-column until `xl`, then uses bounded side columns plus a flexible center column; at `2xl` the columns expand again. Center card headers stack title/actions until `2xl`, generated titles use `overflow-wrap:anywhere`, and inspector copy uses comfortable line-height so long prompts do not squeeze into unreadable narrow columns.
+**Roadmap layout behavior:** `/roadmaps` uses a wider `max-w-[1800px]` route shell. `RoadmapView` stays single-column until `xl`, then uses bounded side columns plus a flexible center column; at `2xl` the columns expand again. Center card headers stack title/actions until `2xl`, generated titles use `overflow-wrap:anywhere`, and inspector copy uses comfortable line-height so long prompts do not squeeze into unreadable narrow columns. Clicking a timeline day sets an accessible expanded state and opens the day's question cards directly below that row, while the right inspector mirrors the same selected day for layouts where it is visible.
+
+**Roadmap completion behavior:** Checking or unchecking a roadmap item is optimistic. `RoadmapView` updates the item status and selected roadmap progress locally without refetching the roadmap/detail data, then rolls back only if `updateRoadmapItemStatus()` returns an error. Checking an item also marks the linked question solved in [[data-model#userquestion-user-progress]]; unchecking only resets the roadmap item to planned so global solved history is not erased.
 
 ### Auth
 | Component | File | Props | Used On | Data Source |

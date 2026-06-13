@@ -20,9 +20,9 @@ GOOGLE_CLIENT_SECRET="..."
 UPSTASH_REDIS_REST_URL="..."
 UPSTASH_REDIS_REST_TOKEN="..."
 
-# AI — used by analysis, solution review, and AI roadmap generation
+# AI — used by analysis, solution review, and bounded roadmap question selection
 OPENROUTER_API_KEY="..."
-OPENROUTER_MODEL="minimax/minimax-m3"
+OPENROUTER_MODEL="deepseek/deepseek-v4-flash"
 
 # SMTP (for email reminders via [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]])
 SMTP_HOST=smtp.gmail.com
@@ -61,6 +61,7 @@ CRON_SECRET=development
 | `lint` | `eslint` | Lint all files | [[conventions]] |
 | `format` | `prettier --write "**/*.{ts,tsx}"` | Format all TypeScript files | [[conventions#git-conventions]] |
 | `typecheck` | `tsc --noEmit` | Type check without emitting | [[conventions]] |
+| `smoke:openrouter` | `tsx scripts/openrouter-routing-smoke.ts` | Sends one tiny request through `lib/ai.ts` and prints OpenRouter provider metadata for routing verification | [[configuration#external-services]] |
 | `postinstall` | `bun prisma generate` | Auto-generate Prisma client after install | [[data-model]] |
 | `db:seed` | `npx prisma db seed` | Run CSV import seed script | [[data-model#seed-script]] |
 
@@ -74,7 +75,7 @@ CRON_SECRET=development
 
 | Service | Purpose | Used By | Configuration |
 |---------|---------|---------|---------------|
-| OpenRouter `https://openrouter.ai/api/v1` | LLM provider for structured AI analysis, solution review, and roadmap planning | `lib/ai.ts`, `lib/analyze.ts`, `lib/solution-review.ts`, `lib/roadmap-ai-planner.ts` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`; `lib/ai.ts` wraps the model with AI SDK `extractJsonMiddleware()` so fenced JSON from some models still works with `Output.object()` |
+| OpenRouter `https://openrouter.ai/api/v1` | LLM provider for structured AI analysis, solution review, and bounded roadmap question selection | `lib/ai.ts`, `lib/analyze.ts`, `lib/solution-review.ts`, `lib/roadmap-ai-planner.ts` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`; `OPENROUTER_MODEL` must be a `deepseek/*` model because `lib/ai.ts` pins OpenRouter routing to `provider.only: ["deepseek"]` with `allow_fallbacks: false`, then wraps the model with AI SDK `extractJsonMiddleware()` so fenced JSON from some models still works with `Output.object()`. Roadmaps ask the model for a selected candidate-ID list with a 60-second timeout; date scheduling and persistence stay local. |
 | Wandbox `https://wandbox.org/api/compile.json` | Remote C++ compile/run service using GCC for playground tests | [[actions#post-apiplaygroundcpp]], [[components#code-playground]] | No env var currently; `app/api/playground/cpp/route.ts` posts directly with `compiler: "gcc-head"` and `options: "warning,gnu++20"` |
 
 ## Prisma

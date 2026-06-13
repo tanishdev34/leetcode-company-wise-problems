@@ -20,6 +20,19 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
+### [2026-06-13] OpenRouter DeepSeek routing pin
+- Updated `lib/ai.ts` so every shared OpenRouter model call requires a `deepseek/*` model and uses `provider.only: ["deepseek"]` with `allow_fallbacks: false`, preventing OpenRouter from auto-routing AI analysis, solution review, or roadmap selection to another provider.
+- Added `scripts/openrouter-routing-smoke.ts` and `bun run smoke:openrouter` to send a tiny live request through the shared helper and print returned OpenRouter provider metadata for dashboard-log verification.
+
+### [2026-06-13] Fast hybrid roadmap generation
+- Replaced full-plan LLM roadmap generation with a hybrid planner in `lib/roadmap-ai-planner.ts`, keeping the same `generateAiRoadmapPlan()` contract for `actions/roadmaps.ts`.
+- Roadmap generation now uses compact DB planning context, local deadline parsing for prompts like "before August" or "1st of August", intensity-based cadence, due-review insertion, and local persistence, while OpenRouter gets one bounded 60-second task to choose the question subset/order from a larger candidate pool and write a short strategy.
+- If AI selection times out, fails, or returns unusable IDs, generation falls back to deterministic difficulty interleaving instead of blocking for large JSON repair loops.
+
+### [2026-06-13] Roadmap day expansion fix
+- `RoadmapView` now expands the clicked timeline day in place with that day's question cards, while keeping the right-side inspector in sync for wider layouts.
+- Verified the saved Amazon roadmap data in Postgres has 70 `RoadmapItem` rows across 35 planned days, all joined to existing `Question` rows.
+
 ### [2026-06-10] Imported saved Amazon roadmap
 - Reused `docs/chats/generation.md` to populate failed roadmap `cmq6z7qa10000ofuq5v7b2t36` without another AI call.
 - Converted the legacy chat shape (`schedule`, `itemType: "new"`, `feasibility.status: "feasible"`) into the current roadmap schema, attached the Amazon company, stored normalized `aiPlanJson`, created 70 `RoadmapItem` rows across 35 study days, and marked generation `done`.

@@ -55,7 +55,7 @@ export function validateAiRoadmapPlan(
     .filter((day) => day.items.length > 0)
 
   if (cleanedDays.length === 0) {
-    return { valid: false, error: "AI roadmap did not contain any usable question assignments" }
+    return { valid: false, error: "Roadmap did not contain any usable question assignments" }
   }
 
   return {

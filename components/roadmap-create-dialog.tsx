@@ -92,7 +92,7 @@ export function RoadmapCreateDialog({ open, onOpenChange, onCreated }: Props) {
         <DialogHeader>
           <DialogTitle>Generate Roadmap</DialogTitle>
           <DialogDescription>
-            Describe your interview goal. AI will choose the pace, schedule, and questions.
+            Describe your interview goal. The planner will choose the pace, schedule, and questions.
           </DialogDescription>
         </DialogHeader>
 

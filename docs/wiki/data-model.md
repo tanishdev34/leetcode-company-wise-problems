@@ -266,7 +266,7 @@ Lifecycle:
 | `strategy` | String | *Deprecated* — kept for backward compat (default `balanced`) |
 | `prompt` | String? | User's natural-language goal input for AI planner |
 | `intensity` | String | `relaxed`, `balanced`, `aggressive` (default `balanced`) |
-| `aiSummary` | String? | AI-generated plan summary |
+| `aiSummary` | String? | Generated plan summary |
 | `aiPlanJson` | Json? | Full AI plan output for debugging/replay |
 | `feasibility` | String | `realistic`, `tight`, `unrealistic` (default `realistic`) |
 | `feasibilityNote` | String? | AI explanation of feasibility assessment |
@@ -274,7 +274,7 @@ Lifecycle:
 | `generationError` | String? | Error message if AI generation failed |
 
 Relations: `user`, `company`, `items`, `events`
-Created by: [[actions#roadmaps]] `createRoadmap()` — creates a draft row immediately with `generationStatus: "running"`, then a background `generateRoadmapInBackground()` job uses the AI planner via `lib/roadmap-ai-planner.ts` and updates the row to `done` or `error`.
+Created by: [[actions#roadmaps]] `createRoadmap()` — creates a draft row immediately with `generationStatus: "running"`, then a background `generateRoadmapInBackground()` job uses the hybrid AI-selection/local-scheduling planner in `lib/roadmap-ai-planner.ts` and updates the row to `done` or `error`.
 
 ### RoadmapItem
 | Field | Type | Notes |
@@ -288,10 +288,10 @@ Created by: [[actions#roadmaps]] `createRoadmap()` — creates a draft row immed
 | `sourceReason` | String? | Why assigned: `company-frequency`, `weak-topic`, etc. |
 | `locked` | Boolean | User-pinned (rebalance won't move) |
 | `itemType` | String | `new_question`, `review`, `catchup`, `checkpoint` (default `new_question`) |
-| `aiReason` | String? | AI-generated explanation for why this question belongs here |
-| `dayTheme` | String? | AI-generated theme for the day (e.g. "Graph foundations") |
+| `aiReason` | String? | Generated explanation for why this question belongs here |
+| `dayTheme` | String? | Generated theme for the day (e.g. "Graph foundations") |
 
-Managed by: [[actions#roadmaps]] `completeRoadmapItem()`, `moveRoadmapItem()`, `rebalanceRoadmap()`
+Managed by: [[actions#roadmaps]] `updateRoadmapItemStatus()`, `completeRoadmapItem()`, `moveRoadmapItem()`, `rebalanceRoadmap()`
 
 ### RoadmapEvent
 | Field | Type | Notes |

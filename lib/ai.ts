@@ -1,8 +1,10 @@
-import { openrouter as openrouterProvider } from "@openrouter/ai-sdk-provider"
+import { openrouter } from "@openrouter/ai-sdk-provider"
 import { extractJsonMiddleware, wrapLanguageModel } from "ai"
 import { prisma } from "@/lib/db"
 
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL ?? "minimax/minimax-m3"
+const OPENROUTER_MODEL =
+  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-v4-flash"
+const OPENROUTER_PROVIDER = "deepseek"
 
 export const DAILY_AI_LIMIT = 4
 
@@ -10,8 +12,18 @@ export function getAiModel() {
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error("OPENROUTER_API_KEY is required for AI features")
   }
+  if (!OPENROUTER_MODEL.startsWith(`${OPENROUTER_PROVIDER}/`)) {
+    throw new Error(
+      "OPENROUTER_MODEL must use a deepseek/* model because OpenRouter routing is pinned to DeepSeek"
+    )
+  }
   return wrapLanguageModel({
-    model: openrouterProvider(OPENROUTER_MODEL),
+    model: openrouter(OPENROUTER_MODEL, {
+      provider: {
+        only: [OPENROUTER_PROVIDER],
+        allow_fallbacks: false,
+      },
+    }),
     middleware: extractJsonMiddleware(),
   })
 }
