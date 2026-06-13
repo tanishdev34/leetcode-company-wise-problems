@@ -15,8 +15,8 @@
 | **Auth** | Better Auth (email/password + Google OAuth) | [[configuration#better-auth]], [[components#auth]] |
 | **Search** | PostgreSQL `pg_trgm` extension | [[configuration#search-index]], [[actions#get-apisearchqpage1pagesize20]] |
 | **Caching** | Upstash Redis | [[configuration#environment-variables]] |
-| **AI Analysis** | OpenRouter via AI SDK (`@openrouter/ai-sdk-provider`, shared model helper in `lib/ai.ts`) with routing pinned to DeepSeek only and fallbacks disabled — queued background jobs via `next/server` `after()` with retry/backoff — rate-limited: 4 calls/day for users, unlimited for admins | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]], [[data-model#aiusage-ai-rate-limiting]] |
-| **AI Interview Coach** | OpenRouter via AI SDK structured output — same DeepSeek-only shared `lib/ai.ts` helper and rate limit as AI Analysis | [[actions#post-apisolution-review]], [[data-model#solutionreview]], [[data-model#aiusage-ai-rate-limiting]] |
+| **AI Analysis** | OpenRouter via AI SDK (`@openrouter/ai-sdk-provider`, shared model helper in `lib/ai.ts`) with routing pinned to Baidu Qianfan only and fallbacks disabled — queued background jobs via `next/server` `after()` with retry/backoff — rate-limited: 4 calls/day for users, unlimited for admins | [[actions#post-apianalyze]], [[data-model#analysisjob-ai-analysis-queue]], [[data-model#aiusage-ai-rate-limiting]] |
+| **AI Interview Coach** | OpenRouter via AI SDK structured output — same Baidu-pinned shared `lib/ai.ts` helper and rate limit as AI Analysis | [[actions#post-apisolution-review]], [[data-model#solutionreview]], [[data-model#aiusage-ai-rate-limiting]] |
 | **Email** | React Email (component-based templates) + Nodemailer (transport) | [[actions#emailts]], [[lib/email]] |
 | **PWA / Offline** | Service Worker (`public/sw.js`) + IndexedDB via `idb-keyval` (`lib/offline.ts`) | [[configuration#config-files]] `next.config.mjs` |
 | **Code Execution** | Client-side JavaScript runner + Wandbox-backed C++ compile/run endpoint | [[components#code-playground]], [[actions#post-apiplaygroundcpp]] |

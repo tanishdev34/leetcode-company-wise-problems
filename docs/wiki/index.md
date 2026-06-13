@@ -20,9 +20,10 @@ For future feature ideas and learning-oriented roadmap options, see [`FEATURES.m
 
 ## Changelog
 
-### [2026-06-13] OpenRouter DeepSeek routing pin
-- Updated `lib/ai.ts` so every shared OpenRouter model call requires a `deepseek/*` model and uses `provider.only: ["deepseek"]` with `allow_fallbacks: false`, preventing OpenRouter from auto-routing AI analysis, solution review, or roadmap selection to another provider.
-- Added `scripts/openrouter-routing-smoke.ts` and `bun run smoke:openrouter` to send a tiny live request through the shared helper and print returned OpenRouter provider metadata for dashboard-log verification.
+### [2026-06-13] OpenRouter Baidu routing pin
+- Updated `lib/ai.ts` so every shared OpenRouter model call uses `provider.only: ["baidu"]` with `allow_fallbacks: false`, routing AI analysis, solution review, and roadmap selection through Baidu Qianfan instead of OpenRouter auto-routing.
+- Kept model choice separate from provider choice, so `OPENROUTER_MODEL` can still point at any supported model id while the request is forced through Baidu Qianfan.
+- Updated `scripts/openrouter-routing-smoke.ts` and `bun run smoke:openrouter` to send a tiny live request through the shared helper and print returned OpenRouter provider metadata for dashboard-log verification.
 
 ### [2026-06-13] Fast hybrid roadmap generation
 - Replaced full-plan LLM roadmap generation with a hybrid planner in `lib/roadmap-ai-planner.ts`, keeping the same `generateAiRoadmapPlan()` contract for `actions/roadmaps.ts`.

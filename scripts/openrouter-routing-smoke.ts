@@ -7,12 +7,12 @@ const startedAt = new Date()
 
 console.log("[openrouter-smoke] starting", startedAt.toISOString())
 console.log("[openrouter-smoke] model", getAiModelName())
-console.log("[openrouter-smoke] expected provider", "deepseek")
+console.log("[openrouter-smoke] expected provider", "baidu")
 
 const result = await generateText({
   model: getAiModel(),
   system: "You are a terse routing smoke-test responder.",
-  prompt: "Reply with exactly: deepseek-routing-ok",
+  prompt: "Reply with exactly: baidu-routing-ok",
   maxOutputTokens: 80,
 })
 
