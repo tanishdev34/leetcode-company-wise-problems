@@ -2,9 +2,8 @@ import { openrouter } from "@openrouter/ai-sdk-provider"
 import { extractJsonMiddleware, wrapLanguageModel } from "ai"
 import { prisma } from "@/lib/db"
 
-const OPENROUTER_MODEL =
-  process.env.OPENROUTER_MODEL ?? "deepseek/deepseek-v4-flash"
-const OPENROUTER_PROVIDER = "baidu"
+const OPENROUTER_MODEL = "deepseek/deepseek-v4-pro"
+const OPENROUTER_PROVIDER = "deepseek"
 
 export const DAILY_AI_LIMIT = 4
 
