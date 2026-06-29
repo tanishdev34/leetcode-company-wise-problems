@@ -22,7 +22,7 @@ UPSTASH_REDIS_REST_TOKEN="..."
 
 # AI — used by analysis, solution review, and bounded roadmap question selection
 OPENROUTER_API_KEY="..."
-OPENROUTER_MODEL="deepseek/deepseek-v4-flash"
+OPENROUTER_MODEL="deepseek/deepseek-v4-pro"
 
 # SMTP (for email reminders via [[actions#daily-question-cron]] and [[actions#contest-reminder-cron]])
 SMTP_HOST=smtp.gmail.com
@@ -75,7 +75,7 @@ CRON_SECRET=development
 
 | Service | Purpose | Used By | Configuration |
 |---------|---------|---------|---------------|
-| OpenRouter `https://openrouter.ai/api/v1` | LLM provider for structured AI analysis, solution review, and bounded roadmap question selection | `lib/ai.ts`, `lib/analyze.ts`, `lib/solution-review.ts`, `lib/roadmap-ai-planner.ts` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`; `lib/ai.ts` pins OpenRouter routing to `provider.only: ["baidu"]` with `allow_fallbacks: false`, so whichever model id you choose is routed through Baidu Qianfan instead of OpenRouter auto-routing. The shared helper still wraps the model with AI SDK `extractJsonMiddleware()` so fenced JSON from some models works with `Output.object()`. Roadmaps ask the model for a selected candidate-ID list with a 60-second timeout; date scheduling and persistence stay local. |
+| OpenRouter `https://openrouter.ai/api/v1` | LLM provider for structured AI analysis, solution review, and bounded roadmap question selection | `lib/ai.ts`, `lib/analyze.ts`, `lib/solution-review.ts`, `lib/roadmap-ai-planner.ts` | `OPENROUTER_API_KEY` (model id is hardcoded in `lib/ai.ts` as `deepseek/deepseek-v4-pro`); `lib/ai.ts` pins OpenRouter routing to `provider.only: ["deepseek"]` with `allow_fallbacks: true`. The shared helper wraps the model with two AI SDK middlewares: (1) a `transformParams` middleware that downgrades structured-output requests from `response_format: json_schema` to `json_object` — DeepSeek rejects `json_schema` ("This response_format type is unavailable now"), so the schema is moved into the prompt instead; and (2) `extractJsonMiddleware()` so any fenced JSON still parses with `Output.object()`. Roadmaps ask the model for a selected candidate-ID list with a 60-second timeout; date scheduling and persistence stay local. |
 | Wandbox `https://wandbox.org/api/compile.json` | Remote C++ compile/run service using GCC for playground tests | [[actions#post-apiplaygroundcpp]], [[components#code-playground]] | No env var currently; `app/api/playground/cpp/route.ts` posts directly with `compiler: "gcc-head"` and `options: "warning,gnu++20"` |
 
 ## Prisma
